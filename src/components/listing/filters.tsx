@@ -121,7 +121,9 @@ export function FilterPanel({ facets, hideBrands = false }: { facets: ProductLis
             className="flex items-center gap-2"
             onSubmit={(e) => {
               e.preventDefault();
-              setParams({ min: min || null, max: max || null });
+              // "500 – 100" means 100 – 500.
+              const [low, high] = min && max && Number(min) > Number(max) ? [max, min] : [min, max];
+              setParams({ min: low || null, max: high || null });
             }}
           >
             <input
@@ -162,11 +164,32 @@ export function FilterPanel({ facets, hideBrands = false }: { facets: ProductLis
   );
 }
 
-/** Phones: the filters open in a sheet. */
-export function FilterButton({ facets, hideBrands, active }: { facets: ProductList['facets']; hideBrands?: boolean; active: number }) {
+/**
+ * Phones: the filters open in a sheet that stays open while choosing (several brands, a price),
+ * with the live number of products on the button that closes it.
+ */
+export function FilterButton({
+  facets,
+  hideBrands,
+  active,
+  total,
+}: {
+  facets: ProductList['facets'];
+  hideBrands?: boolean;
+  active: number;
+  total: number;
+}) {
   const [open, setOpen] = useState(false);
-  const params = useSearchParams();
-  useEffect(() => setOpen(false), [params]);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    document.addEventListener('keydown', onKey);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+    };
+  }, [open]);
   return (
     <>
       <button
@@ -183,15 +206,26 @@ export function FilterButton({ facets, hideBrands, active }: { facets: ProductLi
             aria-modal="true"
             aria-label="Filters"
             onClick={(e) => e.stopPropagation()}
-            className="absolute inset-x-0 bottom-0 max-h-[85dvh] animate-slide-up overflow-y-auto rounded-t-3xl bg-white p-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))]"
+            className="absolute inset-x-0 bottom-0 flex max-h-[85dvh] animate-slide-up flex-col rounded-t-3xl bg-white"
           >
-            <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center justify-between px-5 pt-5 pb-3">
               <h2 className="font-display text-lg font-semibold">Filters</h2>
               <button type="button" onClick={() => setOpen(false)} aria-label="Close filters" className="rounded-full p-1.5 hover:bg-zinc-100">
                 <X className="size-5" />
               </button>
             </div>
-            <FilterPanel facets={facets} hideBrands={hideBrands} />
+            <div className="min-h-0 flex-1 overflow-y-auto px-5 pt-6">
+              <FilterPanel facets={facets} hideBrands={hideBrands} />
+            </div>
+            <div className="border-t border-zinc-100 px-5 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="h-12 w-full rounded-full bg-brand-700 font-semibold text-white hover:bg-brand-800"
+              >
+                Show {total} product{total === 1 ? '' : 's'}
+              </button>
+            </div>
           </div>
         </div>
       )}

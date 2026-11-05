@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
+import Link from 'next/link';
 import { getProducts } from '@/lib/api';
 import { SearchBox } from '@/components/layout/search-box';
 import { listParams, param, ProductListing, type SearchParams } from '@/components/listing/product-listing';
@@ -22,6 +23,22 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
     );
   }
 
-  const list = await getProducts({ ...listParams(query), q });
-  return <ProductListing title={`Results for “${q}”`} list={list} params={query} path="/search/" />;
+  const list = await getProducts({ ...listParams(query), q: q.slice(0, 100) });
+  return (
+    <ProductListing
+      title={`Results for “${q}”`}
+      list={list}
+      params={query}
+      path="/search/"
+      empty={
+        <>
+          <p className="mt-3 font-display text-lg font-semibold">No products match “{q}”</p>
+          <p className="mt-1 text-sm text-zinc-500">Check the spelling, try a shorter word, or browse the categories.</p>
+          <Link href="/categories/" className="mt-4 rounded-full bg-brand-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-800">
+            Browse categories
+          </Link>
+        </>
+      }
+    />
+  );
 }

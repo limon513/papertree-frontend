@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { permanentRedirect } from 'next/navigation';
 import { getProducts } from '@/lib/api';
 import { links } from '@/lib/utils';
-import { listParams, ProductListing, type SearchParams } from '@/components/listing/product-listing';
+import { canonicalFor, listParams, ProductListing, type SearchParams } from '@/components/listing/product-listing';
 
 interface Props {
   params: Promise<{ slug: string[] }>;
@@ -12,13 +12,14 @@ interface Props {
 /** The last part of /product-category/paper/art-paper/ is the category. */
 const slugOf = (parts: string[]) => decodeURIComponent(parts[parts.length - 1] ?? '');
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const list = await getProducts({ category: slugOf((await params).slug), pageSize: 1 });
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
+  const [{ slug }, query] = await Promise.all([params, searchParams]);
+  const list = await getProducts({ category: slugOf(slug), pageSize: 1 });
   const c = list.category!;
   return {
     title: c.seoTitle ?? `${c.name} — buy online in Bangladesh`,
     description: c.seoDescription ?? c.description ?? `Shop ${c.name.toLowerCase()} online with cash on delivery across Bangladesh.`,
-    alternates: { canonical: links.category(c.path.map((p) => p.slug)) },
+    alternates: { canonical: canonicalFor(links.category(c.path.map((p) => p.slug)), query) },
   };
 }
 

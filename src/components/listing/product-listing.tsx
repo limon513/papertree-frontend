@@ -1,5 +1,6 @@
 import { Suspense, type ReactNode } from 'react';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { ChevronLeft, ChevronRight, PackageSearch } from 'lucide-react';
 import type { ProductList } from '@/lib/types';
 import { cn, iconUrl } from '@/lib/utils';
@@ -13,16 +14,36 @@ export const param = (params: SearchParams, key: string) => {
   return Array.isArray(v) ? v[0] : v;
 };
 
-/** The filters a list page passes on to the API. */
-export const listParams = (params: SearchParams) => ({
-  brand: param(params, 'brand')?.split(',').filter(Boolean),
-  sort: param(params, 'sort'),
-  min: param(params, 'min'),
-  max: param(params, 'max'),
-  inStock: param(params, 'inStock'),
-  onSale: param(params, 'onSale'),
-  page: param(params, 'page'),
-});
+const SORTS = ['popular', 'newest', 'price_asc', 'price_desc', 'name', 'deals'];
+const whole = (v: string | undefined) => (v && /^\d{1,7}$/.test(v) ? v : undefined);
+
+/**
+ * The filters a list page passes on to the API. Odd values from old links or typing (?page=abc,
+ * ?sort=x) are dropped, so the page shows the normal list instead of an error.
+ */
+export const listParams = (params: SearchParams) => {
+  let min = whole(param(params, 'min'));
+  let max = whole(param(params, 'max'));
+  // "500 – 100" means 100 – 500.
+  if (min && max && Number(min) > Number(max)) [min, max] = [max, min];
+  const page = whole(param(params, 'page'));
+  const sort = param(params, 'sort');
+  return {
+    brand: param(params, 'brand')?.split(',').filter((b) => /^[a-z0-9-]{1,120}$/.test(b)),
+    sort: sort && SORTS.includes(sort) ? sort : undefined,
+    min,
+    max,
+    inStock: param(params, 'inStock') === 'true' ? 'true' : undefined,
+    onSale: param(params, 'onSale') === 'true' ? 'true' : undefined,
+    page: page && Number(page) >= 1 && Number(page) <= 500 ? page : undefined,
+  };
+};
+
+/** The address Google should keep for a list: without filters or sort (they only change the view), but with the page. */
+export function canonicalFor(path: string, params: SearchParams) {
+  const page = listParams(params).page;
+  return page && page !== '1' ? `${path}?page=${page}` : path;
+}
 
 /** A page of products with breadcrumbs, sub-categories, sort, filters and page numbers. */
 export function ProductListing({
@@ -35,9 +56,12 @@ export function ProductListing({
   subcategories,
   hideBrandFilter = false,
   defaultSort = 'popular',
+  empty,
 }: {
   title: string;
   intro?: ReactNode;
+  /** What to say when nothing matches (before any filter is used). */
+  empty?: ReactNode;
   crumbs?: { name: string; href: string }[];
   list: ProductList;
   params: SearchParams;
@@ -61,6 +85,9 @@ export function ProductListing({
     const s = q.toString();
     return s ? `${path}?${s}` : path;
   };
+
+  // Past the last page (an old link, or fewer products now): go to the last page.
+  if (list.page > pages && list.total > 0) redirect(pageHref(pages));
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-8">
@@ -114,7 +141,7 @@ export function ProductListing({
         <div className="min-w-0">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <Suspense>
-              <FilterButton facets={list.facets} hideBrands={hideBrandFilter} active={activeFilters} />
+              <FilterButton facets={list.facets} hideBrands={hideBrandFilter} active={activeFilters} total={list.total} />
               <div className="hidden min-w-0 flex-1 lg:block">
                 <ActiveFilters facets={list.facets} />
               </div>
@@ -130,8 +157,25 @@ export function ProductListing({
           {list.items.length === 0 ? (
             <div className="flex flex-col items-center rounded-3xl bg-zinc-50 px-6 py-16 text-center">
               <PackageSearch className="size-10 text-zinc-400" />
-              <p className="mt-3 font-display text-lg font-semibold">Nothing here yet</p>
-              <p className="mt-1 text-sm text-zinc-500">{activeFilters ? 'Try removing a filter.' : 'Have a look at our other categories.'}</p>
+              {activeFilters ? (
+                <>
+                  <p className="mt-3 font-display text-lg font-semibold">No products with these filters</p>
+                  <p className="mt-1 text-sm text-zinc-500">Try removing a filter.</p>
+                </>
+              ) : (
+                (empty ?? (
+                  <>
+                    <p className="mt-3 font-display text-lg font-semibold">Nothing here yet</p>
+                    <p className="mt-1 text-sm text-zinc-500">
+                      Have a look at{' '}
+                      <Link href="/categories/" className="text-brand-700 underline">
+                        our other categories
+                      </Link>
+                      .
+                    </p>
+                  </>
+                ))
+              )}
             </div>
           ) : (
             <ul className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 xl:grid-cols-4">

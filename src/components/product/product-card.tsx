@@ -31,7 +31,8 @@ export function ProductCard({ product, className, priority }: { product: Card; c
         )}
       </Link>
       <div className="mt-2.5 flex flex-1 flex-col px-0.5">
-        {product.brand && <span className="text-[11px] font-medium tracking-wide text-zinc-500 uppercase">{product.brand.name}</span>}
+        {/* Always takes its line, so the Add buttons in a row line up. */}
+        <span className="h-4 truncate text-[11px] leading-4 font-medium tracking-wide text-zinc-500 uppercase">{product.brand?.name}</span>
         <Link href={links.product(product.slug)} className="mt-0.5 line-clamp-2 min-h-[2.5rem] text-sm leading-5 text-zinc-800 hover:text-brand-700">
           {product.name}
         </Link>
