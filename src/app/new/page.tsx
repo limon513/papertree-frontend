@@ -1,14 +1,20 @@
 import type { Metadata } from 'next';
 import { getProducts } from '@/lib/api';
-import { listParams, ProductListing, type SearchParams } from '@/components/listing/product-listing';
+import { canonicalFor, listParams, ProductListing, type SearchParams } from '@/components/listing/product-listing';
 
-export const metadata: Metadata = {
-  title: 'New arrivals',
-  description: 'The newest stationery, paper and art supplies at PaperTree.',
-  alternates: { canonical: '/new/' },
-};
+interface Props {
+  searchParams: Promise<SearchParams>;
+}
 
-export default async function NewPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
+export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+  return {
+    title: 'New arrivals',
+    description: 'The newest stationery, paper and art supplies at PaperTree.',
+    alternates: { canonical: canonicalFor('/new/', await searchParams) },
+  };
+}
+
+export default async function NewPage({ searchParams }: Props) {
   const query = await searchParams;
   const params = listParams(query);
   const list = await getProducts({ ...params, sort: params.sort ?? 'newest' });
