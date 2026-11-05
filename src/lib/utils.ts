@@ -1,0 +1,42 @@
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+import type { Img } from './types';
+
+export const cn = (...inputs: ClassValue[]) => twMerge(clsx(inputs));
+
+const taka = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
+
+/** 1250 -> "৳1,250". */
+export const money = (value: number) => `৳${taka.format(value)}`;
+
+/** Percentage off, rounded down: 380 of 543 -> 30. */
+export const percentOff = (price: number, regular: number | null) =>
+  regular && regular > price ? Math.floor(((regular - price) / regular) * 100) : 0;
+
+export const API_PUBLIC_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
+
+/** Category and brand icons are served by the API. */
+export const iconUrl = (key: string) => `${API_PUBLIC_URL}/icons/${key}.svg`;
+
+/** srcset for an API image: "url 160w, url 400w, ...". */
+export const srcSet = (img: Img) =>
+  Object.entries(img.urls)
+    .map(([w, url]) => `${url} ${w}w`)
+    .join(', ');
+
+/** The smallest saved size at least `width` wide (or the largest). */
+export function imageAt(img: Img, width: number) {
+  const sizes = Object.keys(img.urls)
+    .map(Number)
+    .sort((a, b) => a - b);
+  const pick = sizes.find((s) => s >= width) ?? sizes[sizes.length - 1]!;
+  return img.urls[String(pick)]!;
+}
+
+/** Links that keep the old WooCommerce addresses. */
+export const links = {
+  product: (slug: string) => `/product/${slug}/`,
+  category: (path: string[]) => `/product-category/${path.join('/')}/`,
+  brand: (slug: string) => `/brand/${slug}/`,
+};
