@@ -1,0 +1,16 @@
+---
+import { SearchX } from 'lucide-preact';
+import Layout from '@/layouts/Layout.astro';
+---
+
+<Layout title="Page not found" noindex>
+  <div class="mx-auto flex max-w-md flex-col items-center px-4 py-20 text-center">
+    <SearchX class="size-12 text-zinc-400" />
+    <h1 class="mt-4 font-display text-2xl font-bold">We couldn’t find that page</h1>
+    <p class="mt-2 text-zinc-600">It may have moved, or the product is no longer sold. Try searching for it.</p>
+    <div class="mt-6 flex gap-2">
+      <a href="/" class="rounded-full bg-brand-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-800">Go home</a>
+      <a href="/search/" class="rounded-full px-5 py-2.5 text-sm font-semibold text-zinc-800 ring-1 ring-zinc-300">Search</a>
+    </div>
+  </div>
+</Layout>
