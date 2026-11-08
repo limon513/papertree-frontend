@@ -50,6 +50,8 @@ export interface ProductCard {
   name: string;
   brand: { name: string; slug: string } | null;
   image: Img | null;
+  /** Up to 3 more pictures, for picture-on-hover. */
+  moreImages?: Img[];
   price: number;
   /** Set when on sale: the normal price. */
   regularPrice: number | null;

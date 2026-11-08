@@ -2,6 +2,12 @@
 import type { ProductCard } from '@/lib/types';
 import { imageAt, links, money, percentOff, srcSet } from '@/lib/utils';
 
+/**
+ * A product in a list. Two actions: the cart icon (Add to cart) and Buy now (straight to checkout
+ * with just this). Products with options open the "choose options" window instead. On computers,
+ * moving the mouse across the picture shows the product's other pictures.
+ * Plain HTML; src/scripts/product-cards.ts runs every card on the page.
+ */
 interface Props {
   product: ProductCard;
   /** Near the top of the page: load the picture first. */
@@ -11,15 +17,18 @@ const { product: p, priority = false } = Astro.props;
 const off = percentOff(p.price, p.regularPrice);
 // Only the small picture goes to the cart.
 const thumb = p.image ? { urls: { '160': imageAt(p.image, 160) }, width: p.image.width, height: p.image.height, alt: null } : null;
-// What the cart keeps for this product (read by the shared Add-button script).
+// What the cart keeps for a product without options.
 const item =
   p.variantId === null
     ? null
     : { variantId: p.variantId, productId: p.id, slug: p.slug, name: p.name, variantLabel: null, image: thumb, price: p.price, regularPrice: p.regularPrice, maxQuantity: p.lowStock };
+// Pictures for picture-on-hover: one size each, loaded only when the card is pointed at.
+const more = p.image && p.moreImages?.length ? [imageAt(p.image, 400), ...p.moreImages.map((m) => imageAt(m, 400))] : null;
+const href = links.product(p.slug);
 ---
 
-<div class="group flex h-full flex-col rounded-2xl bg-white p-2.5 ring-1 ring-zinc-200/80 transition hover:ring-zinc-300 sm:p-3">
-  <a href={links.product(p.slug)} class="relative block aspect-square overflow-hidden rounded-xl bg-zinc-50">
+<div class="group flex h-full flex-col rounded-2xl bg-white p-2.5 ring-1 ring-zinc-200/80 transition duration-200 hover:shadow-lg hover:shadow-zinc-900/5 hover:ring-zinc-300 sm:p-3">
+  <a href={href} class="relative block aspect-square overflow-hidden rounded-xl bg-zinc-50" data-pics={more ? JSON.stringify(more) : undefined}>
     {
       p.image && (
         <img
@@ -32,42 +41,53 @@ const item =
           loading={priority ? 'eager' : 'lazy'}
           fetchpriority={priority ? 'high' : undefined}
           decoding="async"
-          class:list={['size-full object-contain p-2 transition duration-300 group-hover:scale-[1.04]', !p.inStock && 'opacity-50']}
+          class:list={['size-full object-contain p-2 transition duration-300', !more && 'group-hover:scale-[1.04]', !p.inStock && 'opacity-50']}
         />
       )
     }
     {off >= 5 && <span class="absolute top-2 left-2 rounded-md bg-marigold-300 px-1.5 py-0.5 text-[11px] font-bold text-zinc-900">−{off}%</span>}
+    {
+      more && (
+        <span class="pointer-events-none absolute inset-x-3 bottom-2 hidden gap-1 group-hover:flex" aria-hidden="true">
+          {more.map((_, i) => (
+            <i data-bar class:list={['h-1 flex-1 rounded-full', i === 0 ? 'bg-brand-600' : 'bg-zinc-900/15']} />
+          ))}
+        </span>
+      )
+    }
   </a>
   <div class="mt-2.5 flex flex-1 flex-col px-0.5">
     <span class="h-4 truncate text-[11px] leading-4 font-medium tracking-wide text-zinc-500 uppercase">{p.brand?.name}</span>
-    <a href={links.product(p.slug)} class="mt-0.5 line-clamp-2 min-h-[2.5rem] text-sm leading-5 text-zinc-800 hover:text-brand-700">{p.name}</a>
+    <a href={href} class="mt-0.5 line-clamp-2 min-h-[2.5rem] text-sm leading-5 text-zinc-800 hover:text-brand-700">{p.name}</a>
     <div class="mt-1.5 flex flex-wrap items-baseline gap-x-1.5">
       {p.variantCount > 1 && <span class="text-xs text-zinc-500">from</span>}
       <span class="text-[15px] font-semibold text-zinc-900 tabular-nums">{money(p.price)}</span>
       {off > 0 && <span class="text-xs text-zinc-400 tabular-nums line-through">{money(p.regularPrice!)}</span>}
     </div>
-    <span class="mt-0.5 h-4 text-xs text-marigold-700">{p.lowStock ? `Only ${p.lowStock} left` : ''}</span>
+    <span class="mt-0.5 h-4 text-xs text-marigold-700">{p.lowStock ? `Only ${p.lowStock} left` : p.variantCount > 1 ? `${p.variantCount} options` : ''}</span>
     {
       !p.inStock ? (
         <span class="mt-2 flex h-9 items-center justify-center rounded-full bg-zinc-100 text-sm font-medium text-zinc-400">Out of stock</span>
-      ) : p.variantId === null ? (
-        <a href={links.product(p.slug)} class="mt-2 flex h-9 items-center justify-center rounded-full border border-brand-600 text-sm font-semibold text-brand-700 hover:bg-brand-50">
-          Choose {p.variantCount} options
-        </a>
       ) : (
-        <div class="mt-2" data-item={JSON.stringify(item)}>
-          <button type="button" data-act="add" class="flex h-9 w-full items-center justify-center gap-1 rounded-full bg-brand-700 text-sm font-semibold text-white hover:bg-brand-800 active:scale-[0.98]">
-            <svg class="size-4"><use href="#i-plus" /></svg> Add
+        <div
+          class="mt-2 flex gap-1.5"
+          data-item={item ? JSON.stringify(item) : undefined}
+          data-quick={item ? undefined : p.slug}
+          data-product={p.id}
+          data-href={href}
+        >
+          <button
+            type="button"
+            data-act="add"
+            aria-label={`Add ${p.name} to cart`}
+            class="relative flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-800 ring-1 ring-brand-200 transition hover:bg-brand-100 active:scale-95"
+          >
+            <svg class="size-[18px]"><use href="#i-cart" /></svg>
+            <span data-qty hidden class="absolute -top-1.5 -right-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-brand-700 px-1 text-[10px] font-bold text-white ring-2 ring-white tabular-nums">0</span>
           </button>
-          <div data-counter hidden class="flex h-9 items-center justify-between rounded-full bg-brand-700 text-white">
-            <button type="button" data-act="less" class="flex size-9 items-center justify-center rounded-full hover:bg-brand-800" aria-label={`One less ${p.name}`}>
-              <svg class="size-4"><use href="#i-minus" /></svg>
-            </button>
-            <span data-qty class="text-sm font-semibold tabular-nums" aria-live="polite">0</span>
-            <button type="button" data-act="more" class="flex size-9 items-center justify-center rounded-full hover:bg-brand-800 disabled:opacity-40" aria-label={`One more ${p.name}`}>
-              <svg class="size-4"><use href="#i-plus" /></svg>
-            </button>
-          </div>
+          <button type="button" data-act="buy" class="flex h-9 min-w-0 flex-1 items-center justify-center rounded-full bg-brand-700 px-2 text-sm font-semibold whitespace-nowrap text-white transition hover:bg-brand-800 active:scale-[0.98]">
+            Buy now
+          </button>
         </div>
       )
     }
@@ -75,5 +95,5 @@ const item =
 </div>
 
 <script>
-  import '@/scripts/add-buttons';
+  import '@/scripts/product-cards';
 </script>

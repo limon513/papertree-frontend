@@ -29,16 +29,20 @@ export interface DeliverTo {
 interface State {
   items: CartItem[];
   deliverTo: DeliverTo | null;
+  /** Items the shopper unticked: they stay in the cart but are not ordered now. */
+  skip: number[];
 }
 
 const KEY = 'papertree-cart-v1';
-const EMPTY: State = { items: [], deliverTo: null };
+const EMPTY: State = { items: [], deliverTo: null, skip: [] };
 
 function read(): State {
   if (typeof window === 'undefined') return EMPTY;
   try {
     const saved = JSON.parse(localStorage.getItem(KEY) ?? 'null') as State | null;
-    return saved && Array.isArray(saved.items) ? { items: saved.items, deliverTo: saved.deliverTo ?? null } : EMPTY;
+    return saved && Array.isArray(saved.items)
+      ? { items: saved.items, deliverTo: saved.deliverTo ?? null, skip: Array.isArray(saved.skip) ? saved.skip : [] }
+      : EMPTY;
   } catch {
     return EMPTY;
   }
@@ -85,6 +89,8 @@ export function useCart() {
 
 export const countOf = (s: State) => s.items.reduce((n, i) => n + i.quantity, 0);
 export const subtotalOf = (s: State) => Math.round(s.items.reduce((sum, i) => sum + i.price * i.quantity, 0) * 100) / 100;
+/** The items ticked for checkout. */
+export const selectedOf = (s: State) => s.items.filter((i) => !s.skip.includes(i.variantId));
 
 function set(next: State) {
   cartState.value = next;
@@ -132,7 +138,22 @@ export const cart = {
   },
   /** Empty the cart (the delivery area stays). */
   clear() {
-    set({ ...cartState.value, items: [] });
+    set({ ...cartState.value, items: [], skip: [] });
+  },
+  /** Take these out of the cart (they were ordered). */
+  remove(variantIds: number[]) {
+    const s = cartState.value;
+    set({ ...s, items: s.items.filter((i) => !variantIds.includes(i.variantId)), skip: s.skip.filter((id) => !variantIds.includes(id)) });
+  },
+  /** Tick or untick an item for checkout (all are ticked unless unticked). */
+  select(variantId: number, selected: boolean) {
+    const s = cartState.value;
+    const skip = s.skip.filter((id) => id !== variantId);
+    set({ ...s, skip: selected ? skip : [...skip, variantId] });
+  },
+  selectAll(selected: boolean) {
+    const s = cartState.value;
+    set({ ...s, skip: selected ? [] : s.items.map((i) => i.variantId) });
   },
   setDeliverTo(deliverTo: DeliverTo | null) {
     set({ ...cartState.value, deliverTo });

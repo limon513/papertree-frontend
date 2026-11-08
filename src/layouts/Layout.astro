@@ -12,6 +12,7 @@ import SearchBox from '@/components/islands/SearchBox';
 import { HeaderCart, TabCart } from '@/components/islands/CartButtons';
 import { DeliverToButton, DeliverToDialog } from '@/components/islands/DeliverTo';
 import { AddedNotice, CartDrawer } from '@/components/islands/CartPanels';
+import QuickBuy from '@/components/islands/QuickBuy';
 
 interface Props {
   /** Page title; " | PaperTree" is added unless `fullTitle` is set. */
@@ -30,11 +31,15 @@ interface Props {
   query?: string;
   /** Put the cursor in the search box (the empty search page). */
   focusSearch?: boolean;
+  /** The main category this page belongs to (product pages), for the highlighted menu item. */
+  section?: string;
 }
-const { title, fullTitle = false, description, canonical, image, noindex = false, jsonLd = [], query = '', focusSearch = false } = Astro.props;
+const { title, fullTitle = false, description, canonical, image, noindex = false, jsonLd = [], query = '', focusSearch = false, section } = Astro.props;
 const catalog = await getCatalog();
 const { store, categories } = catalog;
 const path = Astro.url.pathname;
+// Which menu item to highlight: the main category of a category page (or of the product), Deals, Brands.
+const active = section ?? path.match(/^\/product-category\/([^/]+)/)?.[1] ?? (path.startsWith('/deals') ? 'deals' : path.startsWith('/brand') ? 'brands' : null);
 const pageTitle = fullTitle ? title : `${title} | ${store.name}`;
 const pageDescription = description ?? store.tagline ?? 'Paper, stationery and art supplies, delivered across Bangladesh.';
 const canonicalUrl = SITE_URL + (canonical ?? path);
@@ -82,7 +87,7 @@ const imageOrigin = store.logo ? new URL(imageAt(store.logo, 160)).origin : null
             <span class="block text-[10px] font-medium tracking-[0.3em] text-zinc-500 uppercase">Bangladesh</span>
           </span>
         </a>
-        <DeliverToButton client:idle className="hidden max-w-48 lg:flex" />
+        <DeliverToButton client:idle className="hidden w-48 shrink-0 lg:flex" />
         <SearchBox client:idle initial={query} autoFocus={focusSearch} className="hidden flex-1 md:block" />
         <div class="ml-auto flex items-center gap-2 md:ml-0">
           {
@@ -112,15 +117,31 @@ const imageOrigin = store.logo ? new URL(imageAt(store.logo, 160)).origin : null
           {
             categories.slice(0, 7).map((c) => (
               <li>
-                <a href={links.category([c.slug])} class="block rounded-full px-3 py-2 text-sm whitespace-nowrap text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900">
+                <a
+                  href={links.category([c.slug])}
+                  aria-current={active === c.slug ? 'page' : undefined}
+                  class="block rounded-full px-3 py-2 text-sm whitespace-nowrap text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 aria-[current=page]:bg-brand-50 aria-[current=page]:font-semibold aria-[current=page]:text-brand-800"
+                >
                   {c.name}
                 </a>
               </li>
             ))
           }
         </ul>
-        <a href="/deals/" class="rounded-full bg-marigold-100 px-3 py-2 text-sm font-semibold whitespace-nowrap text-zinc-900 hover:bg-marigold-200">Deals</a>
-        <a href="/brands/" class="rounded-full px-3 py-2 text-sm whitespace-nowrap text-zinc-700 hover:bg-zinc-100">Brands</a>
+        <a
+          href="/deals/"
+          aria-current={active === 'deals' ? 'page' : undefined}
+          class="rounded-full bg-marigold-100 px-3 py-2 text-sm font-semibold whitespace-nowrap text-zinc-900 hover:bg-marigold-200 aria-[current=page]:bg-marigold-300"
+        >
+          Deals
+        </a>
+        <a
+          href="/brands/"
+          aria-current={active === 'brands' ? 'page' : undefined}
+          class="rounded-full px-3 py-2 text-sm whitespace-nowrap text-zinc-700 hover:bg-zinc-100 aria-[current=page]:bg-brand-50 aria-[current=page]:font-semibold aria-[current=page]:text-brand-800"
+        >
+          Brands
+        </a>
       </nav>
     </header>
 
@@ -157,5 +178,6 @@ const imageOrigin = store.logo ? new URL(imageAt(store.logo, 160)).origin : null
     <CartDrawer client:idle />
     <DeliverToDialog client:idle />
     <AddedNotice client:idle />
+    <QuickBuy client:idle />
   </body>
 </html>

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { AlertCircle, ArrowLeft, Banknote, Check, Info, Lock, Plus, ShoppingBag } from 'lucide-preact';
-import { cart, countOf, subtotalOf, useCart } from '@/lib/cart';
+import { AlertCircle, ArrowLeft, Banknote, Check, Info, Lock, Minus, Plus, ShoppingBag } from 'lucide-preact';
+import { cart, selectedOf, subtotalOf, useCart } from '@/lib/cart';
 import { useCartCheck } from '@/lib/cart-check';
 import { saveContact, savedContact } from '@/lib/contact';
 import { areasOf, loadPlaces } from '@/lib/places';
@@ -32,9 +32,21 @@ export default function CheckoutView() {
   const [problem, setProblem] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const requestId = useRef(newRequestId());
-  const { check, notes, checking, recheck } = useCartCheck(ready);
+  // "Buy now" (?buy=20&qty=2): just that item, the cart is left as it is. Otherwise the ticked cart items.
+  const [buy, setBuy] = useState<{ variantId: number; quantity: number } | null>(null);
+  const picked = selectedOf(s);
+  const { check, notes, checking, recheck } = useCartCheck(ready, buy ? { external: [buy] } : { only: picked.map((i) => i.variantId) });
+
+  // Buy now: the shop has fewer than asked, so the order is for what there is.
+  const buyLine = buy ? (check?.lines.find((l) => l.variantId === buy.variantId) ?? null) : null;
+  useEffect(() => {
+    if (buy && buyLine?.problem === 'reduced' && buyLine.quantity !== buy.quantity) setBuy({ ...buy, quantity: buyLine.quantity });
+  }, [buyLine?.problem, buyLine?.quantity]);
 
   useEffect(() => {
+    const q = new URLSearchParams(location.search);
+    const id = Number(q.get('buy'));
+    if (Number.isInteger(id) && id > 0) setBuy({ variantId: id, quantity: Math.max(1, Math.min(9999, Math.floor(Number(q.get('qty'))) || 1)) });
     const saved = savedContact();
     setForm((f) => ({ ...f, name: saved.name ?? '', phone: saved.phone ?? '', email: saved.email ?? '', address: saved.address ?? '' }));
     if (saved.email) setShowEmail(true);
@@ -57,18 +69,31 @@ export default function CheckoutView() {
   };
 
   if (!ready) return <div class="mt-6 h-96 animate-pulse rounded-3xl bg-zinc-100" aria-busy="true" />;
-  if (!s.items.length) {
-    return (
-      <div class="mt-6 flex flex-col items-center rounded-3xl bg-zinc-50 px-6 py-14 text-center">
-        <ShoppingBag class="size-10 text-zinc-400" />
-        <p class="mt-3 font-display text-xl font-bold">Your cart is empty</p>
-        <p class="mt-1 text-sm text-zinc-500">Add something first, then come back here to order.</p>
-        <a href="/" class="mt-5 flex h-11 items-center rounded-full bg-brand-700 px-5 text-sm font-semibold text-white">Start shopping</a>
-      </div>
-    );
+
+  // What is being ordered, the same shape either way.
+  const rows = buy
+    ? buyLine && buyLine.price !== undefined && buyLine.problem !== 'gone' && buyLine.problem !== 'out_of_stock'
+      ? [{ variantId: buy.variantId, name: buyLine.name ?? '', variantLabel: buyLine.variantLabel ?? null, image: buyLine.image ?? null, price: buyLine.price, quantity: buy.quantity, maxQuantity: buyLine.maxQuantity ?? null }]
+      : []
+    : picked;
+  const empty = (title: string, text: string, href: string, action: string) => (
+    <div class="mt-6 flex flex-col items-center rounded-3xl bg-zinc-50 px-6 py-14 text-center">
+      <ShoppingBag class="size-10 text-zinc-400" />
+      <p class="mt-3 font-display text-xl font-bold">{title}</p>
+      <p class="mt-1 text-sm text-zinc-500">{text}</p>
+      <a href={href} class="mt-5 flex h-11 items-center rounded-full bg-brand-700 px-5 text-sm font-semibold text-white">{action}</a>
+    </div>
+  );
+  if (buy) {
+    if (!check) return <div class="mt-6 h-96 animate-pulse rounded-3xl bg-zinc-100" aria-busy="true" />;
+    if (!rows.length) return empty('Sorry, this just sold out', notes[0] ?? 'It is no longer available.', '/', 'Keep shopping');
+  } else if (!s.items.length) {
+    return empty('Your cart is empty', 'Add something first, then come back here to order.', '/', 'Start shopping');
+  } else if (!picked.length) {
+    return empty('Nothing chosen to order', 'Tick the items you want to order in your cart.', '/cart/', 'Back to cart');
   }
 
-  const subtotal = check?.subtotal ?? subtotalOf(s);
+  const subtotal = check?.subtotal ?? subtotalOf({ ...s, items: picked });
   const fee = s.deliverTo && check?.delivery ? check.delivery.fee : null;
   const total = subtotal + (fee ?? 0);
   // The total is known once the shop has priced the cart for this area.
@@ -108,7 +133,7 @@ export default function CheckoutView() {
           areaId: areaId || null,
           address: form.address.trim(),
           note: showNote ? form.note.trim() : '',
-          items: s.items.map((i) => ({ variantId: i.variantId, quantity: Math.min(i.quantity, 9999) })),
+          items: rows.map((i) => ({ variantId: i.variantId, quantity: Math.min(i.quantity, 9999) })),
           paymentMethod: 'cod',
           expectedTotal: total,
           requestId: requestId.current,
@@ -121,7 +146,8 @@ export default function CheckoutView() {
         | null;
       if (res.ok && data && 'number' in data) {
         saveContact({ name: form.name.trim(), phone, email: showEmail ? form.email.trim() || null : null, address: form.address.trim() });
-        cart.clear();
+        // Only what was ordered leaves the cart; a "Buy now" order leaves the cart alone.
+        if (!buy) cart.remove(picked.map((i) => i.variantId));
         location.replace(data.token ? `/checkout/thank-you/?o=${encodeURIComponent(data.token)}` : '/');
         return;
       }
@@ -253,10 +279,12 @@ export default function CheckoutView() {
       {/* The order */}
       <aside class="rounded-2xl bg-white p-4 ring-1 ring-zinc-200 sm:p-5 lg:sticky lg:top-36" aria-label="Your order">
         <div class="flex items-center justify-between">
-          <h2 class="font-display text-lg font-bold">Your order ({countOf(s)})</h2>
-          <a href="/cart/" class="flex items-center gap-1 text-sm font-medium text-brand-700">
-            <ArrowLeft class="size-4" /> Edit cart
-          </a>
+          <h2 class="font-display text-lg font-bold">Your order ({rows.reduce((n, i) => n + i.quantity, 0)})</h2>
+          {!buy && (
+            <a href="/cart/" class="flex items-center gap-1 text-sm font-medium text-brand-700">
+              <ArrowLeft class="size-4" /> Edit cart
+            </a>
+          )}
         </div>
         {notes.length > 0 && (
           <ul class="mt-3 space-y-1 rounded-xl bg-marigold-50 px-3 py-2 text-sm text-zinc-700 ring-1 ring-marigold-200" role="status">
@@ -268,15 +296,33 @@ export default function CheckoutView() {
           </ul>
         )}
         <ul class="mt-3 max-h-72 divide-y divide-zinc-100 overflow-y-auto">
-          {s.items.map((i) => (
+          {rows.map((i) => (
             <li key={i.variantId} class="flex items-center gap-3 py-2.5">
               <span class="relative size-12 shrink-0 rounded-lg bg-zinc-50">
                 {i.image && <img src={imageAt(i.image, 160)} alt="" width="48" height="48" class="size-full object-contain p-1" />}
-                <span class="absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-zinc-700 px-1 text-[11px] font-bold text-white">{i.quantity}</span>
+                {!buy && <span class="absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-zinc-700 px-1 text-[11px] font-bold text-white">{i.quantity}</span>}
               </span>
               <span class="min-w-0 flex-1 text-sm">
                 <span class="line-clamp-2 text-zinc-800">{i.name}</span>
                 {i.variantLabel && <span class="block text-xs text-zinc-500">{i.variantLabel}</span>}
+                {buy && (
+                  // Buy now: change how many right here.
+                  <span class="mt-1.5 flex h-8 w-fit items-center rounded-full ring-1 ring-zinc-300">
+                    <button type="button" onClick={() => setBuy({ ...buy, quantity: Math.max(1, buy.quantity - 1) })} disabled={buy.quantity <= 1} aria-label="One less" class="flex size-8 items-center justify-center rounded-full text-zinc-600 disabled:opacity-30">
+                      <Minus class="size-3.5" />
+                    </button>
+                    <span class="w-7 text-center font-semibold tabular-nums" aria-label={`Quantity ${buy.quantity}`}>{buy.quantity}</span>
+                    <button
+                      type="button"
+                      onClick={() => setBuy({ ...buy, quantity: buy.quantity + 1 })}
+                      disabled={i.maxQuantity !== null && buy.quantity >= i.maxQuantity}
+                      aria-label="One more"
+                      class="flex size-8 items-center justify-center rounded-full text-zinc-600 disabled:opacity-30"
+                    >
+                      <Plus class="size-3.5" />
+                    </button>
+                  </span>
+                )}
               </span>
               <span class="text-sm font-medium tabular-nums">{money(i.price * i.quantity)}</span>
             </li>
