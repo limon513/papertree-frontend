@@ -1,0 +1,17 @@
+---
+import Layout from '@/layouts/Layout.astro';
+import Listing from '@/components/listing/Listing.astro';
+import { getProducts } from '@/lib/api';
+import { canonicalFor, hrefWith, listParams } from '@/lib/listing';
+import { API_PUBLIC_URL } from '@/lib/utils';
+
+const params = listParams(Astro.url.searchParams);
+const list = await getProducts(params);
+const pages = Math.max(1, Math.ceil(list.total / list.pageSize));
+if (list.page > pages && list.total > 0) return Astro.redirect(hrefWith('/shop/', params, { page: pages > 1 ? String(pages) : null }));
+Astro.response.headers.set('cache-control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
+---
+
+<Layout title="All products" description="Every pen, notebook, paper and art supply we sell, with cash on delivery across Bangladesh." canonical={canonicalFor('/shop/', params)}>
+  <Listing title="All products" list={list} params={params} path="/shop/" countUrl={`${API_PUBLIC_URL}/v1/store/products`} />
+</Layout>

@@ -1,0 +1,218 @@
+---
+import { ChevronLeft, ChevronRight, PackageSearch, SlidersHorizontal, X } from 'lucide-preact';
+import ProductCard from '@/components/ProductCard.astro';
+import Filters from './Filters.astro';
+import { activeChips, hrefWith, pageNumbers, SORT_OPTIONS, type ListParams } from '@/lib/listing';
+import type { ProductList } from '@/lib/types';
+import { iconUrl } from '@/lib/utils';
+
+/** A page of products: breadcrumbs, sub-categories, filters, sort and page numbers. */
+interface Props {
+  title: string;
+  intro?: string | null;
+  crumbs?: { name: string; href: string }[];
+  list: ProductList;
+  params: ListParams;
+  /** This page's address, for page and filter links. */
+  path: string;
+  subcategories?: { name: string; href: string; icon: string | null; count: number }[];
+  /** Filters this page does not offer. */
+  hide?: string[];
+  defaultSort?: string;
+  /** The API address for this page's products (its fixed filters included), for the live count. */
+  countUrl: string;
+}
+const { title, intro, crumbs = [], list, params, path, subcategories = [], hide = [], defaultSort = 'popular', countUrl } = Astro.props;
+
+const pages = Math.max(1, Math.ceil(list.total / list.pageSize));
+const chips = activeChips(path, params, list.facets, hide);
+const pageHref = (n: number) => hrefWith(path, params, { page: n > 1 ? String(n) : null });
+const currentSort = params.sort ?? defaultSort;
+const pageLink = 'flex size-10 items-center justify-center rounded-full text-sm font-medium tabular-nums';
+---
+
+<div class="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-8">
+  {
+    crumbs.length > 0 && (
+      <nav aria-label="Breadcrumb" class="mb-2 text-sm text-zinc-500">
+        <ol class="flex flex-wrap items-center gap-1">
+          <li><a href="/" class="hover:text-brand-700">Home</a></li>
+          {crumbs.map((c) => (
+            <li class="flex items-center gap-1">
+              <ChevronRight class="size-3.5" />
+              <a href={c.href} class="hover:text-brand-700">{c.name}</a>
+            </li>
+          ))}
+        </ol>
+      </nav>
+    )
+  }
+  <h1 class="font-display text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">{title}</h1>
+  <p class="mt-1 text-sm text-zinc-500">{list.total} product{list.total === 1 ? '' : 's'}</p>
+  {intro && <p class="mt-2 max-w-3xl text-sm text-zinc-600">{intro}</p>}
+
+  {
+    subcategories.length > 0 && (
+      <ul class="scrollbar-none -mx-4 mt-4 flex gap-2 overflow-x-auto px-4 py-1 sm:mx-0 sm:flex-wrap sm:px-0">
+        {subcategories.map((s) => (
+          <li class="shrink-0">
+            <a href={s.href} class="flex items-center gap-2 rounded-full bg-white py-1.5 pr-4 pl-1.5 text-sm ring-1 ring-zinc-200 hover:ring-brand-300">
+              <span class="flex size-8 items-center justify-center rounded-full bg-brand-50">
+                {s.icon && <img src={iconUrl(s.icon)} alt="" width="20" height="20" class="size-5" />}
+              </span>
+              <span class="font-medium text-zinc-800">{s.name}</span>
+              <span class="text-xs text-zinc-400">{s.count}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+
+  <div class="mt-5 grid gap-6 lg:grid-cols-[220px_1fr]">
+    <aside class="hidden lg:block" aria-label="Filters">
+      <Filters facets={list.facets} params={params} hide={hide} mode="instant" countUrl={countUrl} />
+    </aside>
+
+    <div class="min-w-0">
+      <div class="mb-4 flex items-center justify-between gap-2">
+        <button
+          type="button"
+          data-open-filters
+          class:list={[
+            'flex h-10 items-center gap-2 rounded-full border px-4 text-sm font-medium lg:hidden',
+            chips.length ? 'border-brand-600 bg-brand-50 text-brand-800' : 'border-zinc-300',
+          ]}
+        >
+          <SlidersHorizontal class="size-4" /> Filters{chips.length > 0 && ` (${chips.length})`}
+        </button>
+        <div class="hidden min-w-0 flex-1 flex-wrap gap-2 lg:flex">
+          {chips.map((c) => (
+            <a href={c.href} class="flex items-center gap-1 rounded-full bg-brand-50 py-1 pr-2 pl-3 text-sm text-brand-800 hover:bg-brand-100">
+              {c.label} <X class="size-3.5" />
+            </a>
+          ))}
+          {chips.length > 1 && <a href={hrefWith(path, params, { brand: null, min: null, max: null, inStock: null, onSale: null })} class="px-2 py-1 text-sm text-zinc-500 underline underline-offset-2">Clear all</a>}
+        </div>
+        <label class="flex items-center gap-2 text-sm">
+          <span class="hidden text-zinc-500 sm:inline">Sort</span>
+          <select data-sort aria-label="Sort products" class="h-10 rounded-full border border-zinc-300 bg-white pr-8 pl-3 text-sm">
+            {SORT_OPTIONS.map((o) => (
+              <option value={hrefWith(path, params, { sort: o.value === defaultSort ? null : o.value })} selected={o.value === currentSort}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      {
+        chips.length > 0 && (
+          <div class="mb-3 flex flex-wrap gap-2 lg:hidden">
+            {chips.map((c) => (
+              <a href={c.href} class="flex items-center gap-1 rounded-full bg-brand-50 py-1 pr-2 pl-3 text-sm text-brand-800">
+                {c.label} <X class="size-3.5" />
+              </a>
+            ))}
+          </div>
+        )
+      }
+
+      <div id="products" class="transition-opacity">
+        {
+          list.items.length === 0 ? (
+            <div class="flex flex-col items-center rounded-3xl bg-zinc-50 px-6 py-16 text-center">
+              <PackageSearch class="size-10 text-zinc-400" />
+              {chips.length ? (
+                <>
+                  <p class="mt-3 font-display text-lg font-bold">No products with these filters</p>
+                  <p class="mt-1 text-sm text-zinc-500">
+                    Try removing a filter, or{' '}
+                    <a href={hrefWith(path, params, { brand: null, min: null, max: null, inStock: null, onSale: null })} class="text-brand-700 underline">
+                      clear them all
+                    </a>
+                    .
+                  </p>
+                </>
+              ) : (
+                <slot name="empty">
+                  <p class="mt-3 font-display text-lg font-bold">Nothing here yet</p>
+                  <p class="mt-1 text-sm text-zinc-500">
+                    Have a look at <a href="/categories/" class="text-brand-700 underline">our other categories</a>.
+                  </p>
+                </slot>
+              )}
+            </div>
+          ) : (
+            <ul class="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 xl:grid-cols-4">
+              {list.items.map((p, i) => (
+                <li>
+                  <ProductCard product={p} priority={i < 4} />
+                </li>
+              ))}
+            </ul>
+          )
+        }
+      </div>
+
+      {
+        pages > 1 && (
+          <nav aria-label="Pages" class="mt-8 flex items-center justify-center gap-1">
+            {list.page > 1 ? (
+              <a href={pageHref(list.page - 1)} aria-label="Previous page" class:list={[pageLink, 'text-zinc-700 ring-1 ring-zinc-200 hover:ring-zinc-400']}>
+                <ChevronLeft class="size-4" />
+              </a>
+            ) : (
+              <span class:list={[pageLink, 'opacity-30 ring-1 ring-zinc-200']} aria-hidden="true"><ChevronLeft class="size-4" /></span>
+            )}
+            {pageNumbers(list.page, pages).map((n) =>
+              n === null ? (
+                <span class="px-1 text-zinc-400">…</span>
+              ) : (
+                <a
+                  href={pageHref(n)}
+                  aria-label={`Page ${n}`}
+                  aria-current={n === list.page ? 'page' : undefined}
+                  class:list={[pageLink, n === list.page ? 'bg-brand-700 text-white' : 'text-zinc-700 ring-1 ring-zinc-200 hover:ring-zinc-400']}
+                >
+                  {n}
+                </a>
+              ),
+            )}
+            {list.page < pages ? (
+              <a href={pageHref(list.page + 1)} aria-label="Next page" class:list={[pageLink, 'text-zinc-700 ring-1 ring-zinc-200 hover:ring-zinc-400']}>
+                <ChevronRight class="size-4" />
+              </a>
+            ) : (
+              <span class:list={[pageLink, 'opacity-30 ring-1 ring-zinc-200']} aria-hidden="true"><ChevronRight class="size-4" /></span>
+            )}
+          </nav>
+        )
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Phones: filters in a bottom sheet. Choices stay staged until "Show N products". -->
+<dialog id="filter-sheet" aria-label="Filters" class="filter-sheet">
+  <div class="flex max-h-[85dvh] flex-col">
+    <div class="flex items-center justify-between px-5 pt-5 pb-3">
+      <h2 class="font-display text-lg font-bold">Filters</h2>
+      <button type="button" data-close-filters aria-label="Close filters" class="rounded-full p-1.5 text-zinc-500 hover:bg-zinc-100">
+        <X class="size-5" />
+      </button>
+    </div>
+    <div class="min-h-0 flex-1 overflow-y-auto px-5 pt-2 pb-4">
+      <Filters facets={list.facets} params={params} hide={hide} mode="staged" countUrl={countUrl} />
+    </div>
+    <div class="flex gap-2 border-t border-zinc-100 px-5 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+      <button type="button" data-clear-filters class="h-12 shrink-0 rounded-full px-5 font-semibold text-zinc-700 ring-1 ring-zinc-300">Clear</button>
+      <button type="button" data-apply-filters data-total={list.total} class="h-12 flex-1 rounded-full bg-brand-700 font-semibold text-white hover:bg-brand-800 disabled:opacity-60">
+        Show {list.total} product{list.total === 1 ? '' : 's'}
+      </button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+  import '@/scripts/listing';
+</script>

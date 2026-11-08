@@ -105,3 +105,25 @@
   content-visibility: auto;
   contain-intrinsic-size: auto 480px;
 }
+
+/* Phone filter sheet: a native <dialog> shown as a bottom sheet. */
+.filter-sheet {
+  margin: auto 0 0;
+  width: 100%;
+  max-width: 100%;
+  max-height: none;
+  padding: 0;
+  border-radius: 1.5rem 1.5rem 0 0;
+  background: white;
+  color: var(--color-zinc-900);
+}
+.filter-sheet[open] {
+  animation: slide-up 220ms ease-out;
+}
+.filter-sheet::backdrop {
+  background: rgb(9 9 11 / 0.4);
+}
+/* No page scrolling behind an open sheet. */
+html:has(dialog[open]) {
+  overflow: hidden;
+}

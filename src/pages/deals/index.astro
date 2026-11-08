@@ -1,0 +1,32 @@
+---
+import Layout from '@/layouts/Layout.astro';
+import Listing from '@/components/listing/Listing.astro';
+import { getProducts } from '@/lib/api';
+import { canonicalFor, hrefWith, listParams } from '@/lib/listing';
+import { API_PUBLIC_URL } from '@/lib/utils';
+
+// Everything on sale; biggest discount first unless another sort is chosen.
+const params = { ...listParams(Astro.url.searchParams), onSale: undefined };
+const list = await getProducts({ ...params, onSale: 'true', sort: params.sort ?? 'deals' });
+const pages = Math.max(1, Math.ceil(list.total / list.pageSize));
+if (list.page > pages && list.total > 0) return Astro.redirect(hrefWith('/deals/', params, { page: pages > 1 ? String(pages) : null }));
+Astro.response.headers.set('cache-control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
+---
+
+<Layout title="Deals and discounts" description="Stationery, paper and art supplies on sale today, with cash on delivery across Bangladesh." canonical={canonicalFor('/deals/', params)}>
+  <Listing
+    title="Today’s deals"
+    intro="Everything on sale right now, biggest discount first."
+    list={list}
+    params={params}
+    path="/deals/"
+    defaultSort="deals"
+    hide={['onSale']}
+    countUrl={`${API_PUBLIC_URL}/v1/store/products?onSale=true`}
+  >
+    <Fragment slot="empty">
+      <p class="mt-3 font-display text-lg font-bold">No deals right now</p>
+      <p class="mt-1 text-sm text-zinc-500">New offers come often. Have a look at <a href="/new/" class="text-brand-700 underline">new arrivals</a> meanwhile.</p>
+    </Fragment>
+  </Listing>
+</Layout>

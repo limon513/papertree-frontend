@@ -1,0 +1,92 @@
+---
+import type { ListParams } from '@/lib/listing';
+import type { ProductList } from '@/lib/types';
+
+/**
+ * Brand, price and availability filters: a plain form, run by src/scripts/listing.ts.
+ * "instant" (computer sidebar): each tick loads the results. "staged" (phone sheet): ticks only update
+ * the "Show N products" count, until that button is pressed.
+ */
+interface Props {
+  facets: ProductList['facets'];
+  params: ListParams;
+  /** Filters this page does not offer (the brand page has no brand filter, deals are all on sale). */
+  hide?: string[];
+  mode: 'instant' | 'staged';
+  /** The API address for this page's products (fixed filters included), for the live count. */
+  countUrl: string;
+}
+const { facets, params, hide = [], mode, countUrl } = Astro.props;
+const showPrice = facets.price && facets.price.max > facets.price.min;
+const section = 'border-b border-zinc-100 py-4 first:pt-0 last:border-b-0';
+const box = 'flex cursor-pointer items-center gap-2.5 rounded-lg px-1 py-1.5 text-sm hover:bg-zinc-50';
+---
+
+<form data-filters={mode} data-count-url={countUrl} class="text-zinc-800">
+  {
+    !hide.includes('brand') && facets.brands.length > 0 && (
+      <fieldset class={section}>
+        <legend class="mb-2 text-sm font-semibold text-zinc-900">Brand</legend>
+        <ul class:list={['space-y-0.5', mode === 'instant' && 'max-h-72 overflow-y-auto']}>
+          {facets.brands.map((b) => (
+            <li>
+              <label class={box}>
+                <input type="checkbox" name="brand" value={b.slug} checked={params.brand.includes(b.slug)} class="size-[18px] accent-brand-700" />
+                <span class="flex-1">{b.name}</span>
+                <span class="text-xs text-zinc-400 tabular-nums">{b.count}</span>
+              </label>
+            </li>
+          ))}
+        </ul>
+      </fieldset>
+    )
+  }
+  {
+    showPrice && (
+      <fieldset class={section}>
+        <legend class="mb-2 text-sm font-semibold text-zinc-900">Price (৳)</legend>
+        <div class="flex items-center gap-2">
+          <input
+            name="min"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            value={params.min ?? ''}
+            placeholder={String(Math.floor(facets.price!.min))}
+            aria-label="Lowest price"
+            class="h-10 w-full min-w-0 rounded-xl border border-zinc-300 px-3 text-[15px]"
+          />
+          <span class="text-zinc-400">–</span>
+          <input
+            name="max"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            value={params.max ?? ''}
+            placeholder={String(Math.ceil(facets.price!.max))}
+            aria-label="Highest price"
+            class="h-10 w-full min-w-0 rounded-xl border border-zinc-300 px-3 text-[15px]"
+          />
+          {mode === 'instant' && (
+            <button type="submit" class="h-10 shrink-0 rounded-xl bg-zinc-900 px-3 text-sm font-medium text-white hover:bg-zinc-700">
+              Go
+            </button>
+          )}
+        </div>
+      </fieldset>
+    )
+  }
+  <fieldset class={section}>
+    <legend class="mb-2 text-sm font-semibold text-zinc-900">Show</legend>
+    <label class={box}>
+      <input type="checkbox" name="inStock" value="true" checked={!!params.inStock} class="size-[18px] accent-brand-700" />
+      In stock only
+    </label>
+    {
+      !hide.includes('onSale') && (
+        <label class={box}>
+          <input type="checkbox" name="onSale" value="true" checked={!!params.onSale} class="size-[18px] accent-brand-700" />
+          On sale
+        </label>
+      )
+    }
+  </fieldset>
+</form>
