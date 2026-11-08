@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'preact/hooks';
 import { ArrowRight, Info, MapPin, Minus, Plus, ShieldCheck, ShoppingBag, Trash2, Truck, Wallet, X } from 'lucide-preact';
-import { cart, countOf, panel, subtotalOf, useCart } from '@/lib/cart';
+import { cart, panel, selectedOf, subtotalOf, useCart } from '@/lib/cart';
 import { useCartCheck } from '@/lib/cart-check';
-import { imageAt, links, money } from '@/lib/utils';
+import { cn, imageAt, links, money } from '@/lib/utils';
 
 /**
  * The cart page: everything in the cart, checked against today's prices and stock, the delivery
@@ -14,7 +14,9 @@ export default function CartView() {
   const [ready, setReady] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
   useEffect(() => setReady(true), []);
-  const { check, notes, dismissNotes, checking } = useCartCheck(ready);
+  // Only the ticked items are priced for checkout (their delivery charge and total).
+  const picked = selectedOf(s);
+  const { check, notes, dismissNotes, checking } = useCartCheck(ready, { only: picked.map((i) => i.variantId) });
 
   if (!ready) {
     return (
@@ -27,7 +29,6 @@ export default function CartView() {
   }
 
   const { items, deliverTo } = s;
-  const count = countOf(s);
   if (!items.length) {
     return (
       <div class="mt-6 flex flex-col items-center rounded-3xl bg-zinc-50 px-6 py-14 text-center">
@@ -56,9 +57,11 @@ export default function CartView() {
     );
   }
 
-  const subtotal = check?.subtotal ?? subtotalOf(s);
-  const savings = items.reduce((sum, i) => sum + (i.regularPrice && i.regularPrice > i.price ? (i.regularPrice - i.price) * i.quantity : 0), 0);
-  const d = check?.delivery ?? null;
+  const pickedCount = picked.reduce((n, i) => n + i.quantity, 0);
+  const allPicked = picked.length === items.length;
+  const subtotal = picked.length ? (check?.subtotal ?? subtotalOf({ ...s, items: picked })) : 0;
+  const savings = picked.reduce((sum, i) => sum + (i.regularPrice && i.regularPrice > i.price ? (i.regularPrice - i.price) * i.quantity : 0), 0);
+  const d = picked.length ? (check?.delivery ?? null) : null;
   const fee = deliverTo && d ? d.fee : null;
   const total = subtotal + (fee ?? 0);
   const progress = d?.freeAbove ? Math.min(100, Math.round((subtotal / d.freeAbove) * 100)) : null;
@@ -80,12 +83,27 @@ export default function CartView() {
           </div>
         )}
 
-        <ul class="divide-y divide-zinc-100 rounded-2xl bg-white ring-1 ring-zinc-200">
+        <div class="overflow-hidden rounded-2xl bg-white ring-1 ring-zinc-200">
+        {/* Choose what to order now; the rest stays in the cart. */}
+        <label class="flex cursor-pointer items-center gap-3 border-b border-zinc-100 bg-zinc-50/70 px-3 py-2.5 text-sm font-medium text-zinc-800 sm:px-4">
+          <input type="checkbox" checked={allPicked} onChange={() => cart.selectAll(!allPicked)} class="size-5 accent-brand-700" />
+          <span class="flex-1">Select all ({items.length})</span>
+          {!allPicked && <span class="text-xs font-normal text-zinc-500">{picked.length} chosen</span>}
+        </label>
+        <ul class="divide-y divide-zinc-100">
           {items.map((item) => {
             const atMax = item.maxQuantity !== null && item.quantity >= item.maxQuantity;
             const was = item.regularPrice && item.regularPrice > item.price ? item.regularPrice : null;
+            const chosen = !s.skip.includes(item.variantId);
             return (
-              <li key={item.variantId} class="flex gap-3 p-3 sm:gap-4 sm:p-4">
+              <li key={item.variantId} class={cn('flex gap-3 p-3 sm:gap-4 sm:p-4', !chosen && 'bg-zinc-50/60')}>
+                <input
+                  type="checkbox"
+                  checked={chosen}
+                  onChange={() => cart.select(item.variantId, !chosen)}
+                  aria-label={`Order ${item.name} now`}
+                  class="mt-8 size-5 shrink-0 accent-brand-700 sm:mt-10"
+                />
                 <a href={links.product(item.slug)} class="size-20 shrink-0 overflow-hidden rounded-xl bg-zinc-50 sm:size-24">
                   {item.image && <img src={imageAt(item.image, 160)} alt="" width="96" height="96" class="size-full object-contain p-1.5" />}
                 </a>
@@ -136,6 +154,7 @@ export default function CartView() {
             );
           })}
         </ul>
+        </div>
 
         <div class="mt-3 flex items-center justify-between px-1 text-sm">
           <a href="/" class="font-medium text-brand-700 hover:underline">← Continue shopping</a>
@@ -181,7 +200,7 @@ export default function CartView() {
         <dl class="mt-4 space-y-2 text-sm">
           <div class="flex justify-between">
             <dt class="text-zinc-600">
-              Items ({count})
+              Items ({pickedCount})
             </dt>
             <dd class="font-medium tabular-nums">{money(subtotal)}</dd>
           </div>
@@ -227,14 +246,18 @@ export default function CartView() {
 
         {/* Checkout: pinned to the bottom of the screen on phones. */}
         <div data-buy-bar class="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 border-t border-zinc-200 bg-white/95 p-3 backdrop-blur md:static md:mt-4 md:border-0 md:bg-transparent md:p-0">
-          <a
-            href="/checkout/"
-            class="flex h-12 items-center justify-between gap-3 rounded-full bg-brand-700 px-5 font-semibold text-white hover:bg-brand-800 md:justify-center"
-          >
-            <span>Checkout</span>
-            <span class="tabular-nums md:hidden">{money(total)}</span>
-            <ArrowRight class="hidden size-5 md:block" />
-          </a>
+          {picked.length ? (
+            <a
+              href="/checkout/"
+              class="flex h-12 items-center justify-between gap-3 rounded-full bg-brand-700 px-5 font-semibold text-white hover:bg-brand-800 md:justify-center"
+            >
+              <span>Checkout{allPicked ? '' : ` (${pickedCount})`}</span>
+              <span class="tabular-nums md:hidden">{money(total)}</span>
+              <ArrowRight class="hidden size-5 md:block" />
+            </a>
+          ) : (
+            <span class="flex h-12 items-center justify-center rounded-full bg-zinc-200 px-5 text-sm font-semibold text-zinc-500">Tick the items to order</span>
+          )}
         </div>
         {checking && <p class="sr-only">Checking prices and stock</p>}
 

@@ -28,6 +28,11 @@ interface Props {
   variants: BuyVariant[];
   /** The variant shown first (from ?variant=, else the first in stock). */
   startId: number;
+  /**
+   * Inside the "choose options" window: the buttons are not pinned to the screen, the page address
+   * is left alone, and the window shows the option's picture and closes after adding.
+   */
+  inWindow?: { onPicture: (index: number) => void; onAdded: () => void };
 }
 
 const sameValues = (a: (string | null)[], b: (string | null)[]) => a.every((x, i) => x === b[i]);
@@ -37,7 +42,7 @@ const sameValues = (a: (string | null)[], b: (string | null)[]) => a.every((x, i
  * delivery charge for the shopper's area. The chosen option goes into the address (?variant=),
  * so a shared link opens on it.
  */
-export default function BuyBox({ productId, slug, name, options, variants, startId }: Props) {
+export default function BuyBox({ productId, slug, name, options, variants, startId, inWindow }: Props) {
   const s = useCart();
   const start = variants.find((v) => v.id === startId) ?? variants[0]!;
   const [values, setValues] = useState(start.values);
@@ -61,7 +66,8 @@ export default function BuyBox({ productId, slug, name, options, variants, start
       variants.find((v) => v.values[optionIndex] === value);
     setValues(picked ? picked.values : next);
     setQuantity(1);
-    if (picked) {
+    if (picked && inWindow) inWindow.onPicture(picked.picture);
+    else if (picked) {
       if (picked.picture >= 0) document.dispatchEvent(new CustomEvent('pt:picture', { detail: picked.picture }));
       history.replaceState(history.state, '', `?variant=${picked.id}`);
     }
@@ -86,13 +92,15 @@ export default function BuyBox({ productId, slug, name, options, variants, start
     };
     cart.add(item, amount);
     setQuantity(1);
+    if (inWindow) inWindow.onAdded();
     setAdded(true);
     setTimeout(() => setAdded(false), 1600);
     return true;
   };
-  // Buy now: into the cart and straight to checkout.
+  // Buy now: straight to checkout with just this (the cart is left as it is).
+  const buyQuantity = variant?.maxQuantity == null ? quantity : Math.min(quantity, variant.maxQuantity);
   const buyNow = () => {
-    if ((inCart > 0 && !canAdd) || add()) location.href = '/checkout/';
+    if (variant?.inStock) location.href = `/checkout/?buy=${variant.id}&qty=${buyQuantity}`;
   };
 
   // Delivery charge for the shopper's area: the cart plus what is chosen here.
@@ -191,7 +199,10 @@ export default function BuyBox({ productId, slug, name, options, variants, start
       </p>
 
       {/* Quantity and buttons: pinned to the bottom of the screen on phones. */}
-      <div data-buy-bar class="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 border-t border-zinc-200 bg-white/95 p-3 backdrop-blur md:static md:mt-4 md:border-0 md:bg-transparent md:p-0">
+      <div
+        data-buy-bar={inWindow ? undefined : true}
+        class={inWindow ? 'mt-4' : 'fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 border-t border-zinc-200 bg-white/95 p-3 backdrop-blur md:static md:mt-4 md:border-0 md:bg-transparent md:p-0'}
+      >
         <div class="flex gap-2">
           <div class="flex h-12 shrink-0 items-center rounded-full bg-white ring-1 ring-zinc-300">
             <button type="button" onClick={() => setQuantity((q) => Math.max(1, q - 1))} disabled={quantity <= 1} class="flex size-11 items-center justify-center rounded-full text-zinc-600 hover:bg-zinc-100 disabled:opacity-30" aria-label="One less">
@@ -202,8 +213,8 @@ export default function BuyBox({ productId, slug, name, options, variants, start
             </span>
             <button
               type="button"
-              onClick={() => setQuantity((q) => (room !== null ? Math.min(Math.max(1, room), q + 1) : q + 1))}
-              disabled={!canAdd || (room !== null && quantity >= room)}
+              onClick={() => setQuantity((q) => (variant?.maxQuantity != null ? Math.min(variant.maxQuantity, q + 1) : q + 1))}
+              disabled={!variant?.inStock || (variant.maxQuantity != null && quantity >= variant.maxQuantity)}
               class="flex size-11 items-center justify-center rounded-full text-zinc-600 hover:bg-zinc-100 disabled:opacity-30"
               aria-label="One more"
             >
@@ -215,7 +226,7 @@ export default function BuyBox({ productId, slug, name, options, variants, start
             onClick={add}
             disabled={!canAdd}
             class={cn(
-              'flex h-12 flex-1 items-center justify-center gap-1.5 rounded-full px-3 text-sm font-semibold transition sm:text-base',
+              'flex h-12 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full px-3 text-sm font-semibold whitespace-nowrap transition sm:text-base',
               added ? 'bg-brand-100 text-brand-800' : 'bg-white text-brand-800 ring-2 ring-brand-700 hover:bg-brand-50',
               'disabled:bg-zinc-100 disabled:text-zinc-400 disabled:ring-0',
             )}
@@ -235,8 +246,8 @@ export default function BuyBox({ productId, slug, name, options, variants, start
             )}
           </button>
           {variant?.inStock && (
-            <button type="button" onClick={buyNow} class="flex h-12 flex-1 items-center justify-center rounded-full bg-brand-700 px-3 text-sm font-semibold text-white hover:bg-brand-800 sm:text-base">
-              Buy now{canAdd ? ` · ${money(variant.price * amount)}` : ''}
+            <button type="button" onClick={buyNow} class="flex h-12 min-w-0 flex-1 items-center justify-center rounded-full bg-brand-700 px-3 text-sm font-semibold whitespace-nowrap text-white hover:bg-brand-800 sm:text-base">
+              Buy now
             </button>
           )}
         </div>

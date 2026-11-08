@@ -1,5 +1,5 @@
 ---
-import { ArrowRight, Building2, Flame, Phone, Sparkles, Truck, Wallet } from 'lucide-preact';
+import { ArrowRight, Building2, Flame, Sparkles, Truck } from 'lucide-preact';
 import Layout from '@/layouts/Layout.astro';
 import ProductRail from '@/components/ProductRail.astro';
 import { getCatalog, getHome } from '@/lib/api';
@@ -101,25 +101,6 @@ Astro.response.headers.set('cache-control', 'public, max-age=0, s-maxage=60, sta
               </span>
               <span class="text-xs leading-tight font-medium text-zinc-800 sm:text-sm">{c.name}</span>
             </a>
-          </li>
-        ))
-      }
-    </ul>
-  </section>
-
-  <!-- Why order here, said once and quietly. -->
-  <section class="mx-auto max-w-7xl px-4 pt-4 sm:px-6" aria-label="Why order from us">
-    <ul class="grid grid-cols-2 gap-2 text-xs text-zinc-700 sm:grid-cols-4 sm:text-sm">
-      {
-        [
-          { Icon: Wallet, text: 'Cash on delivery' },
-          { Icon: Truck, text: 'All 64 districts' },
-          { Icon: Building2, text: 'Wholesale prices' },
-          { Icon: Phone, text: store.phone ? `Call ${store.phone}` : 'Order by phone' },
-        ].map(({ Icon, text }) => (
-          <li class="flex items-center gap-2 rounded-xl bg-zinc-50 px-3 py-2.5">
-            <Icon class="size-4 shrink-0 text-brand-600" />
-            <span class="truncate">{text}</span>
           </li>
         ))
       }

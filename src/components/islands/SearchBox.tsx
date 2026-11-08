@@ -101,15 +101,16 @@ export default function SearchBox({ className, initial = '', autoFocus = false }
           enterKeyHint="search"
           class="h-full min-w-0 flex-1 bg-transparent px-2.5 text-[15px] outline-none placeholder:text-zinc-500 [&::-webkit-search-cancel-button]:hidden"
         />
-        {loading && <Loader2 class="mr-1 size-4 animate-spin text-zinc-400" />}
-        {text && !loading && (
-          <button type="button" onClick={() => setText('')} aria-label="Clear search" class="mr-1 rounded-full p-1.5 text-zinc-400 hover:text-zinc-700">
-            <X class="size-4" />
-          </button>
-        )}
-        <button type="submit" class="flex h-9 items-center rounded-full bg-brand-700 px-4 text-sm font-semibold text-white hover:bg-brand-800">
-          Search
-        </button>
+        {/* Always the same width, so the box never jumps while typing. Enter searches. */}
+        <span class="flex size-9 shrink-0 items-center justify-center">
+          {loading ? (
+            <Loader2 class="size-4 animate-spin text-zinc-400" />
+          ) : text ? (
+            <button type="button" onClick={() => setText('')} aria-label="Clear search" class="rounded-full p-1.5 text-zinc-400 hover:text-zinc-700">
+              <X class="size-4" />
+            </button>
+          ) : null}
+        </span>
       </form>
       {showPanel && (
         <div id={listId} class="absolute inset-x-0 top-full z-50 mt-2 animate-fade-in overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-zinc-200">

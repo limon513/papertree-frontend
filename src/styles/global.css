@@ -1,5 +1,15 @@
 @import 'tailwindcss';
-@import '@fontsource/bricolage-grotesque/latin-700.css';
+/*
+ * Headings font. 'optional': if it is not ready at first paint (it is preloaded, so it usually is),
+ * the page keeps the fallback font instead of swapping later, so nothing jumps.
+ */
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  font-style: normal;
+  font-weight: 700;
+  font-display: optional;
+  src: url('@fontsource/bricolage-grotesque/files/bricolage-grotesque-latin-700-normal.woff2') format('woff2');
+}
 
 @theme {
   /* Text uses the phone's own font (nothing to download); headings use one weight of Bricolage. The taka sign (৳) is drawn by the phone's Bangla font. */
@@ -57,6 +67,8 @@
 
 @layer base {
   html {
+    /* Room for the scrollbar is always kept, so opening the cart or a dialog never shifts the page sideways. */
+    scrollbar-gutter: stable;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     -webkit-tap-highlight-color: transparent;
