@@ -1,0 +1,166 @@
+---
+import { ChevronLeft, ChevronRight } from 'lucide-preact';
+import type { Banner } from '@/lib/types';
+import { imageAt, srcSet } from '@/lib/utils';
+
+/**
+ * The top of the home page: the banner slider (managed in the admin), with up to two side offers
+ * beside it on computers and under it on phones. Plain HTML; the small script below moves the slider.
+ */
+interface Props {
+  hero: Banner[];
+  tiles: Banner[];
+}
+const { hero, tiles } = Astro.props;
+const withTiles = tiles.length > 0;
+---
+
+<section class="mx-auto max-w-7xl px-4 pt-3 sm:px-6 sm:pt-5" aria-label="Offers">
+  <div class:list={['grid gap-3', withTiles && 'lg:grid-cols-[2fr_1fr]']}>
+    <div data-hero class="group relative overflow-hidden rounded-2xl bg-zinc-100 sm:rounded-3xl" aria-roledescription="carousel">
+      <ul data-track class="scrollbar-none flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain" aria-live="off">
+        {
+          hero.map((b, i) => {
+            const picture = (
+              <picture class="block">
+                {b.mobileImage && <source media="(max-width: 639px)" srcset={srcSet(b.mobileImage)} sizes="100vw" />}
+                <img
+                  src={imageAt(b.image, 1600)}
+                  srcset={srcSet(b.image)}
+                  sizes={withTiles ? '(min-width: 1280px) 830px, (min-width: 1024px) 66vw, 100vw' : '(min-width: 1280px) 1230px, 100vw'}
+                  width={b.image.width}
+                  height={b.image.height}
+                  alt={b.title}
+                  loading={i === 0 ? 'eager' : 'lazy'}
+                  fetchpriority={i === 0 ? 'high' : undefined}
+                  decoding={i === 0 ? 'sync' : 'async'}
+                  class:list={['block aspect-[2/1] w-full object-cover', !withTiles && 'lg:aspect-[3/1]']}
+                />
+              </picture>
+            );
+            return (
+              <li class="w-full shrink-0 snap-start" aria-roledescription="slide" aria-label={`${i + 1} of ${hero.length}`}>
+                {b.link ? (
+                  <a href={b.link} class="block">
+                    {picture}
+                  </a>
+                ) : (
+                  picture
+                )}
+              </li>
+            );
+          })
+        }
+      </ul>
+      {
+        hero.length > 1 && (
+          <>
+            <button
+              type="button"
+              data-step="-1"
+              aria-label="Previous offer"
+              class="absolute top-1/2 left-3 hidden size-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-zinc-800 opacity-0 shadow-md transition group-hover:opacity-100 focus-visible:opacity-100 lg:flex"
+            >
+              <ChevronLeft class="size-5" />
+            </button>
+            <button
+              type="button"
+              data-step="1"
+              aria-label="Next offer"
+              class="absolute top-1/2 right-3 hidden size-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-zinc-800 opacity-0 shadow-md transition group-hover:opacity-100 focus-visible:opacity-100 lg:flex"
+            >
+              <ChevronRight class="size-5" />
+            </button>
+            <div class="absolute inset-x-0 bottom-2.5 flex justify-center gap-1.5 sm:bottom-4">
+              {hero.map((b, i) => (
+                <button
+                  type="button"
+                  data-dot={i}
+                  aria-label={`Show offer ${i + 1}: ${b.title}`}
+                  aria-current={i === 0 ? 'true' : undefined}
+                  class="h-2 w-2 rounded-full bg-white/70 shadow ring-1 ring-black/10 transition-all aria-[current=true]:w-6 aria-[current=true]:bg-white"
+                />
+              ))}
+            </div>
+          </>
+        )
+      }
+    </div>
+
+    {
+      withTiles && (
+        // Computers: the offers take the slider's height (they do not set it), stacked in two rows.
+        <div class="lg:relative">
+        <div class="grid grid-cols-2 gap-3 lg:absolute lg:inset-0 lg:grid-cols-1 lg:grid-rows-2">
+          {tiles.map((b) => {
+            const picture = (
+              <picture class="block size-full">
+                {b.mobileImage && <source media="(max-width: 639px)" srcset={srcSet(b.mobileImage)} sizes="50vw" />}
+                <img
+                  src={imageAt(b.image, 800)}
+                  srcset={srcSet(b.image)}
+                  sizes="(min-width: 1280px) 410px, (min-width: 1024px) 33vw, 50vw"
+                  width={b.image.width}
+                  height={b.image.height}
+                  alt={b.title}
+                  loading="eager"
+                  class="block aspect-[2/1] size-full object-cover lg:aspect-auto"
+                />
+              </picture>
+            );
+            return b.link ? (
+              <a href={b.link} class="block overflow-hidden rounded-2xl bg-zinc-100 transition hover:opacity-95 sm:rounded-3xl lg:min-h-0">
+                {picture}
+              </a>
+            ) : (
+              <div class="overflow-hidden rounded-2xl bg-zinc-100 sm:rounded-3xl lg:min-h-0">{picture}</div>
+            );
+          })}
+        </div>
+        </div>
+      )
+    }
+  </div>
+</section>
+
+<script>
+  // The slider: moves every 5 seconds, pauses while pointed at, touched or focused; swipe, arrows and dots.
+  for (const hero of document.querySelectorAll<HTMLElement>('[data-hero]')) {
+    const track = hero.querySelector<HTMLElement>('[data-track]')!;
+    const dots = hero.querySelectorAll<HTMLButtonElement>('[data-dot]');
+    const count = track.children.length;
+    if (count < 2) continue;
+    let current = 0;
+    let paused = false;
+    const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const mark = (i: number) => {
+      current = i;
+      dots.forEach((d, n) => (n === i ? d.setAttribute('aria-current', 'true') : d.removeAttribute('aria-current')));
+    };
+    const go = (i: number) => {
+      const next = (i + count) % count;
+      track.scrollTo({ left: next * track.clientWidth, behavior: calm ? 'instant' : 'smooth' });
+      mark(next);
+    };
+
+    track.addEventListener('scroll', () => {
+      const i = Math.round(track.scrollLeft / track.clientWidth);
+      if (i !== current) mark(i);
+    }, { passive: true });
+    dots.forEach((d) => d.addEventListener('click', () => go(Number(d.dataset.dot))));
+    hero.querySelectorAll<HTMLButtonElement>('[data-step]').forEach((b) => b.addEventListener('click', () => go(current + Number(b.dataset.step))));
+
+    // Pause while the shopper is looking at or using it.
+    for (const [on, off] of [['pointerenter', 'pointerleave'], ['focusin', 'focusout'], ['touchstart', 'touchend']] as const) {
+      hero.addEventListener(on, () => (paused = true), { passive: true });
+      hero.addEventListener(off, () => (paused = false), { passive: true });
+    }
+    if (!calm) {
+      setInterval(() => {
+        if (!paused && document.visibilityState === 'visible') go(current + 1);
+      }, 5000);
+    }
+    addEventListener('resize', () => track.scrollTo({ left: current * track.clientWidth, behavior: 'instant' }));
+  }
+</script>

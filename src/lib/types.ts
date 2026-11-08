@@ -64,7 +64,19 @@ export interface ProductCard {
   isNew: boolean;
 }
 
+/** A home page banner (managed in the admin). */
+export interface Banner {
+  /** What it shows, for screen readers. */
+  title: string;
+  image: Img;
+  /** Made for phones; else the main picture. */
+  mobileImage: Img | null;
+  link: string | null;
+}
+
 export interface HomeData {
+  /** Shown now: the slider (up to 8) and the side offers (up to 2). */
+  banners?: { hero: Banner[]; tiles: Banner[] };
   deals: ProductCard[];
   newArrivals: ProductCard[];
   bestSellers: ProductCard[];

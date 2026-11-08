@@ -2,12 +2,15 @@
 import { ArrowRight, Building2, Flame, Sparkles, Truck } from 'lucide-preact';
 import Layout from '@/layouts/Layout.astro';
 import ProductRail from '@/components/ProductRail.astro';
+import HeroBanners from '@/components/HeroBanners.astro';
 import { getCatalog, getHome } from '@/lib/api';
 import { iconUrl, imageAt, links, SITE_URL, srcSet } from '@/lib/utils';
 
 const [home, catalog] = await Promise.all([getHome(), getCatalog()]);
 const { store, categories, brands } = catalog;
 // A few real product pictures for the banner (computers).
+// Banners from the admin, when there is at least one for the slider.
+const banners = home.banners?.hero.length ? home.banners : null;
 const showcase = [...home.deals, ...home.newArrivals].filter((p) => p.image).slice(0, 4);
 const whatsapp = store.whatsapp ? `https://wa.me/88${store.whatsapp}?text=${encodeURIComponent('Hello PaperTree, I want to buy wholesale.')}` : null;
 
@@ -38,7 +41,14 @@ Astro.response.headers.set('cache-control', 'public, max-age=0, s-maxage=60, sta
 ---
 
 <Layout title={`${store.name} Bangladesh | Stationery, Paper & Art Supplies`} fullTitle canonical="/" jsonLd={jsonLd}>
-  <!-- Banner: what the shop is, in one look. Short on phones, so products show on the first screen. -->
+  <!-- Banners from the admin; without any, a simple welcome banner (short on phones, so products show on the first screen). -->
+  {
+    banners ? (
+      <>
+        <h1 class="sr-only">{store.name} Bangladesh: paper, pens and art supplies</h1>
+        <HeroBanners hero={banners.hero} tiles={banners.tiles} />
+      </>
+    ) : (
   <section class="bg-paper">
     <div class="mx-auto grid max-w-7xl items-center gap-6 px-4 py-5 sm:px-6 sm:py-8 md:grid-cols-[1.1fr_1fr] md:py-10">
       <div>
@@ -85,6 +95,8 @@ Astro.response.headers.set('cache-control', 'public, max-age=0, s-maxage=60, sta
       }
     </div>
   </section>
+    )
+  }
 
   <!-- Category shelf: swipe on phones, a grid on computers. -->
   <section class="mx-auto max-w-7xl px-4 pt-6 sm:px-6" aria-label="Categories">
