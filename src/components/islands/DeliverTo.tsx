@@ -2,10 +2,9 @@ import { useEffect, useMemo, useState } from 'preact/hooks';
 import { ChevronDown, MapPin, X } from 'lucide-preact';
 import { cart, panel, useCart } from '@/lib/cart';
 import type { Places } from '@/lib/types';
-import { API_PUBLIC_URL, cn } from '@/lib/utils';
+import { areasOf, loadPlaces } from '@/lib/places';
+import { cn } from '@/lib/utils';
 
-let placesCache: Promise<Places> | null = null;
-const loadPlaces = () => (placesCache ??= fetch(`${API_PUBLIC_URL}/v1/store/places`).then((r) => r.json() as Promise<Places>));
 
 /** "Deliver to Mirpur, Dhaka". `compact` is the slim phone line. */
 export function DeliverToButton({ className, compact = false }: { className?: string; compact?: boolean }) {
@@ -48,7 +47,7 @@ export function DeliverToDialog() {
   }, [open]);
 
   const areas = useMemo(
-    () => (places?.areas ?? []).filter((a) => a.districtId === districtId).sort((x, y) => Number(y.city) - Number(x.city) || x.name.localeCompare(y.name)),
+    () => areasOf(places, districtId),
     [places, districtId],
   );
   if (!open) return null;

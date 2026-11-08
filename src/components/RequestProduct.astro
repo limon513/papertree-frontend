@@ -49,18 +49,15 @@ const input = 'mt-1 h-11 w-full rounded-xl border border-zinc-300 bg-white px-3 
 </form>
 
 <script>
-  const KEY = 'pt-contact';
+  import { saveContact, savedContact } from '@/lib/contact';
+
   for (const form of document.querySelectorAll<HTMLFormElement>('form[data-request-product]')) {
     const field = (name: string) => form.elements.namedItem(name) as HTMLInputElement;
     const button = form.querySelector<HTMLButtonElement>('button[type=submit]')!;
     const errors = form.querySelectorAll<HTMLElement>('[data-error]');
-    try {
-      const saved = JSON.parse(localStorage.getItem(KEY) ?? 'null') as { name?: string; phone?: string } | null;
-      if (saved?.name) field('name').value = saved.name;
-      if (saved?.phone) field('phone').value = saved.phone;
-    } catch {
-      // Storage blocked: just type them.
-    }
+    const saved = savedContact();
+    if (saved.name) field('name').value = saved.name;
+    if (saved.phone) field('phone').value = saved.phone;
     const show = (fields: Record<string, string>) => {
       for (const el of errors) {
         const message = fields[el.dataset.error!];
@@ -100,11 +97,7 @@ const input = 'mt-1 h-11 w-full rounded-xl border border-zinc-300 bg-white px-3 
           show(error?.fields && Object.keys(error.fields).length ? error.fields : { form: error?.message ?? 'Could not send. Please try again.' });
           return;
         }
-        try {
-          localStorage.setItem(KEY, JSON.stringify({ name: body.name, phone: body.phone }));
-        } catch {
-          // Not remembered: fine.
-        }
+        saveContact({ name: body.name, phone: body.phone });
         form.querySelector<HTMLElement>('[data-phone]')!.textContent = body.phone;
         form.querySelector<HTMLElement>('[data-fields]')!.hidden = true;
         const sent = form.querySelector<HTMLElement>('[data-sent]')!;

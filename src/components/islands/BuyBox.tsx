@@ -90,10 +90,9 @@ export default function BuyBox({ productId, slug, name, options, variants, start
     setTimeout(() => setAdded(false), 1600);
     return true;
   };
-  // Buy now: straight to the cart with this in it (checkout comes next).
+  // Buy now: into the cart and straight to checkout.
   const buyNow = () => {
-    if (inCart > 0 && !canAdd) return void (panel.value = 'cart');
-    if (add()) panel.value = 'cart';
+    if ((inCart > 0 && !canAdd) || add()) location.href = '/checkout/';
   };
 
   // Delivery charge for the shopper's area: the cart plus what is chosen here.
@@ -103,7 +102,7 @@ export default function BuyBox({ productId, slug, name, options, variants, start
     if (!deliverTo || !variant) return setQuote(null);
     const controller = new AbortController();
     const timer = setTimeout(async () => {
-      const items = s.items.map((i) => ({ variantId: i.variantId, quantity: i.quantity }));
+      const items = s.items.map((i) => ({ variantId: i.variantId, quantity: Math.min(i.quantity, 9999) }));
       const mine = items.find((i) => i.variantId === variant.id);
       if (mine) mine.quantity += quantity;
       else items.push({ variantId: variant.id, quantity });

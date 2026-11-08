@@ -1,0 +1,19 @@
+---
+import Layout from '@/layouts/Layout.astro';
+import ProductRail from '@/components/ProductRail.astro';
+import CartView from '@/components/islands/CartView';
+import { getHome } from '@/lib/api';
+
+// The cart itself lives in the browser; the page around it is the same for everyone.
+const home = await getHome();
+const popular = home.bestSellers.length >= 4 ? home.bestSellers : [...home.deals, ...home.newArrivals].slice(0, 12);
+Astro.response.headers.set('cache-control', 'public, max-age=0, s-maxage=300, stale-while-revalidate=600');
+---
+
+<Layout title="Your cart" noindex>
+  <div class="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-8">
+    <h1 class="font-display text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">Your cart</h1>
+    <CartView client:load />
+  </div>
+  <ProductRail title="Popular right now" href="/shop/?sort=popular" products={popular} />
+</Layout>

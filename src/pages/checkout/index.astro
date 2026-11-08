@@ -1,0 +1,17 @@
+---
+import { Lock } from 'lucide-preact';
+import Layout from '@/layouts/Layout.astro';
+import CheckoutView from '@/components/islands/CheckoutView';
+
+// The cart and the shopper's details live in the browser; the page around them is the same for everyone.
+Astro.response.headers.set('cache-control', 'public, max-age=0, s-maxage=300, stale-while-revalidate=600');
+---
+
+<Layout title="Checkout" noindex>
+  <div class="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-8">
+    <h1 class="flex items-center gap-2 font-display text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
+      Checkout <Lock class="size-5 text-zinc-400" />
+    </h1>
+    <CheckoutView client:load />
+  </div>
+</Layout>

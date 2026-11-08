@@ -182,3 +182,21 @@ export interface CartCheck {
     toFree: number | null;
   } | null;
 }
+
+/** An order placed on the website, for its thank-you page. */
+export interface PlacedOrder {
+  number: number;
+  status: string;
+  createdAt: string;
+  customerName: string;
+  phone: string;
+  address: string;
+  areaName: string | null;
+  districtName: string;
+  deliveryTime: string | null;
+  paymentMethod: string;
+  items: { name: string; variantLabel: string | null; quantity: number; unitPrice: number; lineTotal: number; image: Img | null }[];
+  subtotal: number;
+  deliveryFee: number;
+  total: number;
+}

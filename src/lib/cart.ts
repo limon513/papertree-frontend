@@ -130,6 +130,10 @@ export const cart = {
         .filter((i) => i.quantity > 0),
     });
   },
+  /** Empty the cart (the delivery area stays). */
+  clear() {
+    set({ ...cartState.value, items: [] });
+  },
   setDeliverTo(deliverTo: DeliverTo | null) {
     set({ ...cartState.value, deliverTo });
   },
