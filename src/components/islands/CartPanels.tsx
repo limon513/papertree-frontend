@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'preact/hooks';
 import { Check, Minus, Plus, ShoppingBag, Trash2, Truck, X } from 'lucide-preact';
-import { cart, countOf, lastAdded, panel, subtotalOf, useCart } from '@/lib/cart';
+import { cart, countOf, lastAdded, panel, selectedOf, subtotalOf, useCart } from '@/lib/cart';
 import { useCartCheck } from '@/lib/cart-check';
-import { imageAt, links, money } from '@/lib/utils';
+import { cn, imageAt, links, money } from '@/lib/utils';
 
 /** The cart panel: right side on computers, bottom sheet on phones. Checks prices and stock with the API. */
 export function CartDrawer() {
@@ -11,7 +11,10 @@ export function CartDrawer() {
   const { items, deliverTo } = s;
   // On the cart page the page itself checks the cart.
   const onCartPage = typeof location !== 'undefined' && location.pathname.startsWith('/cart');
-  const { check, notes } = useCartCheck(open && !onCartPage);
+  // Like the cart page: only the ticked items are ordered and counted in the total.
+  const picked = selectedOf(s);
+  const allPicked = picked.length === items.length;
+  const { check, notes } = useCartCheck(open && !onCartPage, { only: picked.map((i) => i.variantId) });
 
   useEffect(() => {
     if (!open) return;
@@ -26,8 +29,10 @@ export function CartDrawer() {
 
   if (!open) return null;
   const close = () => (panel.value = null);
-  const d = check?.delivery;
+  const d = picked.length ? check?.delivery : null;
   const fee = d?.fee ?? null;
+  const pickedCount = picked.reduce((n, i) => n + i.quantity, 0);
+  const subtotal = check?.subtotal ?? subtotalOf({ ...s, items: picked });
 
   return (
     <div class="fixed inset-0 z-50 animate-fade-in bg-zinc-950/40" onClick={close}>
@@ -81,9 +86,22 @@ export function CartDrawer() {
                 ))}
               </ul>
             )}
+            {/* Choose what to order now; the rest stays in the cart. */}
+            <label class="mx-5 mt-3 flex cursor-pointer items-center gap-3 border-b border-zinc-100 pb-2.5 text-sm font-medium text-zinc-800">
+              <input type="checkbox" checked={allPicked} onChange={() => cart.selectAll(!allPicked)} class="size-5 accent-brand-700" />
+              <span class="flex-1">Select all ({items.length})</span>
+              {!allPicked && <span class="text-xs font-normal text-zinc-500">{picked.length} chosen</span>}
+            </label>
             <ul class="min-h-0 flex-1 divide-y divide-zinc-100 overflow-y-auto px-5">
               {items.map((item) => (
-                <li key={item.variantId} class="flex gap-3 py-3">
+                <li key={item.variantId} class={cn('flex gap-3 py-3', s.skip.includes(item.variantId) && 'opacity-60')}>
+                  <input
+                    type="checkbox"
+                    checked={!s.skip.includes(item.variantId)}
+                    onChange={() => cart.select(item.variantId, s.skip.includes(item.variantId))}
+                    aria-label={`Order ${item.name} now`}
+                    class="mt-5 size-5 shrink-0 accent-brand-700"
+                  />
                   <a href={links.product(item.slug)} class="size-16 shrink-0 overflow-hidden rounded-xl bg-zinc-50">
                     {item.image && <img src={imageAt(item.image, 160)} alt="" class="size-full object-contain p-1" />}
                   </a>
@@ -113,10 +131,14 @@ export function CartDrawer() {
               ))}
             </ul>
             <div class="border-t border-zinc-100 px-5 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-              <a href="/checkout/" class="flex h-12 items-center justify-between rounded-full bg-brand-700 px-5 font-semibold text-white hover:bg-brand-800">
-                <span>Checkout</span>
-                <span class="tabular-nums">{money(subtotalOf(s) + (fee ?? 0))}</span>
-              </a>
+              {picked.length ? (
+                <a href="/checkout/" class="flex h-12 items-center justify-between rounded-full bg-brand-700 px-5 font-semibold text-white hover:bg-brand-800">
+                  <span>Checkout{allPicked ? '' : ` (${pickedCount})`}</span>
+                  <span class="tabular-nums">{money(subtotal + (fee ?? 0))}</span>
+                </a>
+              ) : (
+                <span class="flex h-12 items-center justify-center rounded-full bg-zinc-200 px-5 text-sm font-semibold text-zinc-500">Tick the items to order</span>
+              )}
               <a href="/cart/" class="mt-2 block text-center text-sm font-medium text-brand-700 hover:underline">
                 View cart
               </a>
