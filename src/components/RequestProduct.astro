@@ -1,0 +1,122 @@
+---
+import { PackagePlus } from 'lucide-preact';
+import { API_PUBLIC_URL } from '@/lib/utils';
+
+/**
+ * "Request this product": when a search finds nothing, the shopper leaves a name and phone and staff
+ * call back (admin → Requests & Leads). Plain form; the script below sends it. Name and phone are
+ * remembered on this device for next time.
+ */
+interface Props {
+  query: string;
+}
+const { query } = Astro.props;
+const input = 'mt-1 h-11 w-full rounded-xl border border-zinc-300 bg-white px-3 text-[15px] aria-[invalid=true]:border-red-500';
+---
+
+<form data-request-product data-api={API_PUBLIC_URL} data-query={query} novalidate class="mt-6 w-full max-w-md rounded-2xl bg-white p-5 text-left ring-1 ring-zinc-200">
+  <div data-fields>
+    <p class="flex items-center gap-2 font-display text-base font-bold text-zinc-900">
+      <PackagePlus class="size-5 text-brand-600" /> Can’t find it? Ask us to get it
+    </p>
+    <p class="mt-1 text-sm text-zinc-500">Tell us what you need. We’ll call you back, usually the same day.</p>
+    <label class="mt-4 block text-sm font-medium text-zinc-800">
+      What are you looking for?
+      <textarea name="details" rows="2" maxlength="1000" class:list={[input, 'h-auto py-2']}>{query}</textarea>
+    </label>
+    <p data-error="details" class="mt-1 hidden text-sm text-red-600"></p>
+    <div class="mt-3 grid gap-3 sm:grid-cols-2">
+      <label class="block text-sm font-medium text-zinc-800">
+        Your name
+        <input name="name" autocomplete="name" maxlength="100" class={input} />
+        <span data-error="name" class="mt-1 hidden text-sm font-normal text-red-600"></span>
+      </label>
+      <label class="block text-sm font-medium text-zinc-800">
+        Phone
+        <input name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="01XXXXXXXXX" maxlength="20" class={input} />
+        <span data-error="phone" class="mt-1 hidden text-sm font-normal text-red-600"></span>
+      </label>
+    </div>
+    <!-- Only bots fill this box (it is hidden from people). -->
+    <input name="website" tabindex="-1" autocomplete="off" aria-hidden="true" class="absolute -left-[9999px] size-px opacity-0" />
+    <p data-error="form" class="mt-3 hidden rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"></p>
+    <button type="submit" class="mt-4 h-11 w-full rounded-full bg-brand-700 text-sm font-semibold text-white hover:bg-brand-800 disabled:opacity-60">Send request</button>
+  </div>
+  <div data-sent hidden role="status" class="py-2 text-center">
+    <p class="font-display text-lg font-bold text-brand-800">Thank you! We got your request.</p>
+    <p class="mt-1 text-sm text-zinc-600">We’ll call you on <span data-phone class="font-medium text-zinc-900"></span> soon.</p>
+  </div>
+</form>
+
+<script>
+  const KEY = 'pt-contact';
+  for (const form of document.querySelectorAll<HTMLFormElement>('form[data-request-product]')) {
+    const field = (name: string) => form.elements.namedItem(name) as HTMLInputElement;
+    const button = form.querySelector<HTMLButtonElement>('button[type=submit]')!;
+    const errors = form.querySelectorAll<HTMLElement>('[data-error]');
+    try {
+      const saved = JSON.parse(localStorage.getItem(KEY) ?? 'null') as { name?: string; phone?: string } | null;
+      if (saved?.name) field('name').value = saved.name;
+      if (saved?.phone) field('phone').value = saved.phone;
+    } catch {
+      // Storage blocked: just type them.
+    }
+    const show = (fields: Record<string, string>) => {
+      for (const el of errors) {
+        const message = fields[el.dataset.error!];
+        el.textContent = message ?? '';
+        el.classList.toggle('hidden', !message);
+        field(el.dataset.error!)?.setAttribute('aria-invalid', String(!!message));
+      }
+    };
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const body = {
+        name: field('name').value.trim(),
+        phone: field('phone').value.trim(),
+        details: (form.elements.namedItem('details') as HTMLTextAreaElement).value.trim(),
+        query: form.dataset.query || null,
+        website: field('website').value,
+      };
+      // Quick checks first: no wait for an obvious gap.
+      const missing: Record<string, string> = {};
+      if (body.details.length < 2) missing.details = 'Tell us what you are looking for';
+      if (!body.name) missing.name = 'Enter your name';
+      if (!body.phone) missing.phone = 'Enter your phone number';
+      show(missing);
+      if (Object.keys(missing).length) return;
+
+      button.disabled = true;
+      button.textContent = 'Sending…';
+      try {
+        const res = await fetch(`${form.dataset.api}/v1/store/product-requests`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) {
+          const error = ((await res.json().catch(() => null)) as { error?: { message?: string; fields?: Record<string, string> } } | null)?.error;
+          show(error?.fields && Object.keys(error.fields).length ? error.fields : { form: error?.message ?? 'Could not send. Please try again.' });
+          return;
+        }
+        try {
+          localStorage.setItem(KEY, JSON.stringify({ name: body.name, phone: body.phone }));
+        } catch {
+          // Not remembered: fine.
+        }
+        form.querySelector<HTMLElement>('[data-phone]')!.textContent = body.phone;
+        form.querySelector<HTMLElement>('[data-fields]')!.hidden = true;
+        const sent = form.querySelector<HTMLElement>('[data-sent]')!;
+        sent.hidden = false;
+        // The form got shorter: bring the thank-you into view.
+        sent.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      } catch {
+        show({ form: 'No connection. Check your internet and try again.' });
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Send request';
+      }
+    });
+  }
+</script>

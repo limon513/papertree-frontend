@@ -28,8 +28,10 @@ interface Props {
   jsonLd?: object[];
   /** What the search box starts with (on the search page). */
   query?: string;
+  /** Put the cursor in the search box (the empty search page). */
+  focusSearch?: boolean;
 }
-const { title, fullTitle = false, description, canonical, image, noindex = false, jsonLd = [], query = '' } = Astro.props;
+const { title, fullTitle = false, description, canonical, image, noindex = false, jsonLd = [], query = '', focusSearch = false } = Astro.props;
 const catalog = await getCatalog();
 const { store, categories } = catalog;
 const path = Astro.url.pathname;
@@ -81,7 +83,7 @@ const imageOrigin = store.logo ? new URL(imageAt(store.logo, 160)).origin : null
           </span>
         </a>
         <DeliverToButton client:idle className="hidden max-w-48 lg:flex" />
-        <SearchBox client:idle initial={query} className="hidden flex-1 md:block" />
+        <SearchBox client:idle initial={query} autoFocus={focusSearch} className="hidden flex-1 md:block" />
         <div class="ml-auto flex items-center gap-2 md:ml-0">
           {
             store.phone && (
@@ -100,7 +102,7 @@ const imageOrigin = store.logo ? new URL(imageAt(store.logo, 160)).origin : null
 
       <!-- Phones and tablets: search under the logo, then the delivery area. -->
       <div class="px-4 pb-2.5 sm:px-6 md:hidden">
-        <SearchBox client:idle initial={query} />
+        <SearchBox client:idle initial={query} autoFocus={focusSearch} />
         <DeliverToButton client:idle compact className="mt-2 max-w-full" />
       </div>
 

@@ -4,15 +4,21 @@ import type { Suggestions } from '@/lib/types';
 import { API_PUBLIC_URL, cn, iconUrl, imageAt, links, money } from '@/lib/utils';
 
 /** The big search box: suggestions as you type, Enter for all results. */
-export default function SearchBox({ className, initial = '' }: { className?: string; initial?: string }) {
+export default function SearchBox({ className, initial = '', autoFocus = false }: { className?: string; initial?: string; autoFocus?: boolean }) {
   const [text, setText] = useState(initial);
   const [open, setOpen] = useState(false);
   const [data, setData] = useState<{ q: string; result: Suggestions } | null>(null);
   const [loading, setLoading] = useState(false);
   const [active, setActive] = useState(-1);
   const box = useRef<HTMLDivElement>(null);
+  const input = useRef<HTMLInputElement>(null);
   const listId = useId();
   const query = text.trim();
+
+  // The page has two boxes (computer and phone header): only the one on screen takes the cursor.
+  useEffect(() => {
+    if (autoFocus && input.current?.offsetParent) input.current.focus();
+  }, []);
 
   useEffect(() => {
     if (query.length < 2) {
@@ -87,6 +93,7 @@ export default function SearchBox({ className, initial = '' }: { className?: str
             } else if (e.key === 'Escape') setOpen(false);
           }}
           placeholder="Search pens, paper, colours…"
+          ref={input}
           aria-label="Search products"
           aria-expanded={showPanel}
           aria-controls={listId}
@@ -106,6 +113,11 @@ export default function SearchBox({ className, initial = '' }: { className?: str
       </form>
       {showPanel && (
         <div id={listId} class="absolute inset-x-0 top-full z-50 mt-2 animate-fade-in overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-zinc-200">
+          {result?.search?.corrected && result.total > 0 && (
+            <p class="border-b border-zinc-100 px-4 py-2 text-xs text-zinc-500">
+              Showing results for <strong class="text-zinc-800">“{result.search.searched}”</strong>
+            </p>
+          )}
           {result && (result.categories.length > 0 || result.brands.length > 0) && (
             <div class="flex flex-wrap gap-2 border-b border-zinc-100 p-3">
               {result.categories.map((c) => (
