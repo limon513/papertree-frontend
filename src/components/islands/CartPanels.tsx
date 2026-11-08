@@ -1,49 +1,17 @@
 import { useEffect, useState } from 'preact/hooks';
 import { Check, Minus, Plus, ShoppingBag, Trash2, Truck, X } from 'lucide-preact';
 import { cart, countOf, lastAdded, panel, subtotalOf, useCart } from '@/lib/cart';
-import type { CartCheck } from '@/lib/types';
-import { API_PUBLIC_URL, imageAt, links, money } from '@/lib/utils';
+import { useCartCheck } from '@/lib/cart-check';
+import { imageAt, links, money } from '@/lib/utils';
 
 /** The cart panel: right side on computers, bottom sheet on phones. Checks prices and stock with the API. */
 export function CartDrawer() {
   const open = panel.value === 'cart';
   const s = useCart();
   const { items, deliverTo } = s;
-  const [check, setCheck] = useState<CartCheck | null>(null);
-  const key = JSON.stringify([items.map((i) => [i.variantId, i.quantity]), deliverTo?.districtId, deliverTo?.areaId]);
-
-  useEffect(() => {
-    if (!open || !items.length) return;
-    const controller = new AbortController();
-    const timer = setTimeout(async () => {
-      try {
-        const res = await fetch(`${API_PUBLIC_URL}/v1/store/cart`, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ items: items.map((i) => ({ variantId: i.variantId, quantity: i.quantity })), districtId: deliverTo?.districtId ?? null, areaId: deliverTo?.areaId ?? null }),
-          signal: controller.signal,
-        });
-        if (!res.ok) return;
-        const result = (await res.json()) as CartCheck;
-        setCheck(result);
-        const gone = result.lines.filter((l) => l.problem === 'gone').map((l) => l.variantId);
-        const fresh = result.lines
-          .filter((l) => l.problem !== 'gone')
-          .map((l) => ({ variantId: l.variantId, price: l.price, quantity: l.quantity, maxQuantity: l.maxQuantity ?? null }));
-        const differs = fresh.some((f) => {
-          const i = items.find((x) => x.variantId === f.variantId);
-          return !i || i.price !== f.price || i.quantity !== f.quantity || i.maxQuantity !== f.maxQuantity;
-        });
-        if (gone.length || differs) cart.update(fresh, gone);
-      } catch {
-        // Offline: show the saved cart.
-      }
-    }, 250);
-    return () => {
-      clearTimeout(timer);
-      controller.abort();
-    };
-  }, [open, key]);
+  // On the cart page the page itself checks the cart.
+  const onCartPage = typeof location !== 'undefined' && location.pathname.startsWith('/cart');
+  const { check, notes } = useCartCheck(open && !onCartPage);
 
   useEffect(() => {
     if (!open) return;
@@ -106,6 +74,13 @@ export function CartDrawer() {
                 </button>
               )}
             </div>
+            {notes.length > 0 && (
+              <ul class="mx-5 mt-3 space-y-1 rounded-xl bg-marigold-50 px-3 py-2 text-xs text-zinc-700 ring-1 ring-marigold-200" role="status">
+                {notes.map((n) => (
+                  <li key={n}>{n}</li>
+                ))}
+              </ul>
+            )}
             <ul class="min-h-0 flex-1 divide-y divide-zinc-100 overflow-y-auto px-5">
               {items.map((item) => (
                 <li key={item.variantId} class="flex gap-3 py-3">
@@ -114,13 +89,20 @@ export function CartDrawer() {
                   </a>
                   <div class="min-w-0 flex-1">
                     <a href={links.product(item.slug)} class="line-clamp-2 text-sm leading-5 text-zinc-800">{item.name}</a>
+                    {item.variantLabel && <p class="text-xs text-zinc-500">{item.variantLabel}</p>}
                     <div class="mt-2 flex items-center justify-between">
                       <div class="flex h-8 items-center rounded-full ring-1 ring-zinc-300">
                         <button type="button" onClick={() => cart.setQuantity(item.variantId, item.quantity - 1)} class="flex size-8 items-center justify-center rounded-full text-zinc-600" aria-label={`One less ${item.name}`}>
                           {item.quantity === 1 ? <Trash2 class="size-3.5" /> : <Minus class="size-3.5" />}
                         </button>
                         <span class="w-7 text-center text-sm font-semibold tabular-nums">{item.quantity}</span>
-                        <button type="button" onClick={() => cart.setQuantity(item.variantId, item.quantity + 1)} class="flex size-8 items-center justify-center rounded-full text-zinc-600" aria-label={`One more ${item.name}`}>
+                        <button
+                          type="button"
+                          onClick={() => cart.setQuantity(item.variantId, item.quantity + 1)}
+                          disabled={item.maxQuantity !== null && item.quantity >= item.maxQuantity}
+                          class="flex size-8 items-center justify-center rounded-full text-zinc-600 disabled:opacity-30"
+                          aria-label={`One more ${item.name}`}
+                        >
                           <Plus class="size-3.5" />
                         </button>
                       </div>
@@ -131,9 +113,12 @@ export function CartDrawer() {
               ))}
             </ul>
             <div class="border-t border-zinc-100 px-5 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-              <a href="/cart/" class="flex h-12 items-center justify-between rounded-full bg-brand-700 px-5 font-semibold text-white">
+              <a href="/checkout/" class="flex h-12 items-center justify-between rounded-full bg-brand-700 px-5 font-semibold text-white hover:bg-brand-800">
                 <span>Checkout</span>
                 <span class="tabular-nums">{money(subtotalOf(s) + (fee ?? 0))}</span>
+              </a>
+              <a href="/cart/" class="mt-2 block text-center text-sm font-medium text-brand-700 hover:underline">
+                View cart
               </a>
             </div>
           </>
