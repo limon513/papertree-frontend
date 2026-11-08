@@ -1,5 +1,5 @@
 import { API_URL } from 'astro:env/server';
-import type { Catalog, HomeData, ProductList } from './types';
+import type { Catalog, HomeData, Product, ProductList } from './types';
 
 const API = API_URL.replace(/\/$/, '');
 
@@ -47,6 +47,7 @@ function get<T>(path: string, ttl = 60): Promise<T> {
 
 export const getCatalog = () => get<Catalog>('/catalog', 300);
 export const getHome = () => get<HomeData>('/home', 60);
+export const getProduct = (slug: string) => get<Product>(`/products/${encodeURIComponent(slug)}`, 60);
 
 export function getProducts(params: Record<string, string | string[] | undefined>) {
   const query = new URLSearchParams();

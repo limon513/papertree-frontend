@@ -157,7 +157,7 @@ export function AddedNotice() {
   if (!added || !visible) return null;
   const count = countOf(s);
   return (
-    <div class="pointer-events-none fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-40 flex justify-center px-3 lg:bottom-6 lg:justify-end lg:px-6">
+    <div class="added-notice pointer-events-none fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-40 flex justify-center px-3 lg:bottom-6 lg:justify-end lg:px-6">
       <div role="status" class="pointer-events-auto flex w-full max-w-md animate-slide-up items-center gap-3 rounded-2xl bg-zinc-900 p-2 text-white shadow-xl">
         <span class="relative size-10 shrink-0 overflow-hidden rounded-lg bg-white">
           {added.item.image && <img src={imageAt(added.item.image, 160)} alt="" class="size-full object-contain" />}

@@ -1,0 +1,146 @@
+---
+import { ChevronRight, ShieldCheck, Wallet } from 'lucide-preact';
+import Layout from '@/layouts/Layout.astro';
+import Gallery from '@/components/product/Gallery.astro';
+import ProductRail from '@/components/ProductRail.astro';
+import BuyBox, { type BuyVariant } from '@/components/islands/BuyBox';
+import { getCatalog, getProduct, NotFound } from '@/lib/api';
+import { breadcrumbs } from '@/lib/seo';
+import type { Img } from '@/lib/types';
+import { imageAt, links, SITE_URL } from '@/lib/utils';
+
+let product;
+try {
+  product = await getProduct(Astro.params.slug!);
+} catch (err) {
+  if (err instanceof NotFound) return Astro.rewrite('/404/');
+  throw err;
+}
+const { store } = await getCatalog();
+
+// Pictures: the gallery, then options' own pictures not already in it.
+const key = (img: Img) => Object.values(img.urls)[0];
+const pictures: Img[] = [...product.images];
+for (const v of product.variants) if (v.image && !pictures.some((p) => key(p) === key(v.image!))) pictures.push(v.image);
+const pictureOf = (img: Img | null) => (img ? pictures.findIndex((p) => key(p) === key(img)) : -1);
+
+// Which option to show first: ?variant= (a shared link), else the first in stock.
+const asked = Number(Astro.url.searchParams.get('variant'));
+const first = product.variants.find((v) => v.id === asked) ?? product.variants.find((v) => v.inStock) ?? product.variants[0]!;
+const thumbOf = (img: Img | null) => (img ? { urls: { '160': imageAt(img, 160) }, width: img.width, height: img.height, alt: null } : null);
+const variants: BuyVariant[] = product.variants.map((v) => ({
+  id: v.id,
+  values: v.values,
+  price: v.price,
+  regularPrice: v.regularPrice,
+  saleEndsAt: v.saleEndsAt,
+  inStock: v.inStock,
+  maxQuantity: v.maxQuantity,
+  lowStock: v.lowStock,
+  picture: pictureOf(v.image),
+  thumb: thumbOf(v.image ?? product.images[0] ?? null),
+}));
+
+const plain = (html: string | null) => (html ?? '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+const description = product.seoDescription ?? (product.shortDescription || plain(product.description) || `${product.name}, with cash on delivery across Bangladesh.`).slice(0, 160);
+const path = product.categoryPath;
+const crumbs = path.map((c, i) => ({ name: c.name, href: links.category(path.slice(0, i + 1).map((p) => p.slug)) }));
+const url = `${SITE_URL}${links.product(product.slug)}`;
+
+// Google: price, stock and brand in search results, one offer per option.
+const offer = (v: (typeof product.variants)[number]) => ({
+  '@type': 'Offer',
+  url: product.variants.length > 1 ? `${url}?variant=${v.id}` : url,
+  priceCurrency: 'BDT',
+  price: v.price,
+  ...(v.saleEndsAt && { priceValidUntil: v.saleEndsAt.slice(0, 10) }),
+  ...(v.sku && { sku: v.sku }),
+  itemCondition: 'https://schema.org/NewCondition',
+  availability: v.inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+  seller: { '@type': 'Organization', name: `${store.name} Bangladesh` },
+});
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    description: product.shortDescription ?? (plain(product.description).slice(0, 500) || product.name),
+    image: pictures.map((p) => imageAt(p, 800)),
+    url,
+    ...(product.variants[0]?.sku && { sku: product.variants[0].sku }),
+    ...(product.brand && { brand: { '@type': 'Brand', name: product.brand.name } }),
+    offers: product.variants.length === 1 ? offer(product.variants[0]!) : product.variants.map(offer),
+  },
+  ...(crumbs.length ? [breadcrumbs([...crumbs, { name: product.name, href: links.product(product.slug) }])] : []),
+];
+
+Astro.response.headers.set('cache-control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
+---
+
+<Layout title={product.seoTitle ?? product.name} description={description} canonical={links.product(product.slug)} image={pictures[0] ?? null} jsonLd={jsonLd}>
+  <div class="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6">
+    {
+      crumbs.length > 0 && (
+        <nav aria-label="Breadcrumb" class="mb-4 text-sm text-zinc-500">
+          <ol class="flex flex-wrap items-center gap-1">
+            <li><a href="/" class="hover:text-brand-700">Home</a></li>
+            {crumbs.map((c) => (
+              <li class="flex items-center gap-1">
+                <ChevronRight class="size-3.5" />
+                <a href={c.href} class="hover:text-brand-700">{c.name}</a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+      )
+    }
+
+    <div class="grid gap-6 md:grid-cols-2 md:gap-10">
+      <Gallery pictures={pictures} name={product.name} start={Math.max(0, pictureOf(first.image))} />
+
+      <div>
+        {product.brand && <a href={links.brand(product.brand.slug)} class="text-xs font-semibold tracking-wide text-brand-700 uppercase hover:underline">{product.brand.name}</a>}
+        <h1 class="mt-1 font-display text-2xl leading-tight font-bold tracking-tight text-zinc-900 sm:text-3xl">{product.name}</h1>
+        {product.shortDescription && <p class="mt-3 text-[15px] whitespace-pre-line text-zinc-600">{product.shortDescription}</p>}
+
+        <BuyBox client:load productId={product.id} slug={product.slug} name={product.name} options={product.options} variants={variants} startId={first.id} />
+
+        <ul class="mt-3 space-y-2 px-1 text-sm text-zinc-600">
+          <li class="flex items-center gap-2.5"><Wallet class="size-4 shrink-0 text-brand-600" /> Pay cash when it arrives, or bKash, Nagad and cards</li>
+          <li class="flex items-center gap-2.5"><ShieldCheck class="size-4 shrink-0 text-brand-600" /> Original products, checked before packing</li>
+        </ul>
+      </div>
+    </div>
+
+    {
+      (product.description || product.specs.length > 0) && (
+        <div class="mt-10 grid gap-8 lg:grid-cols-[1fr_360px]">
+          {product.description ? (
+            <section>
+              <h2 class="font-display text-xl font-bold">About this product</h2>
+              {/* Cleaned by the API when it was saved. */}
+              <div class="rich-text mt-3" set:html={product.description} />
+            </section>
+          ) : (
+            <div />
+          )}
+          {product.specs.length > 0 && (
+            <section>
+              <h2 class="font-display text-xl font-bold">Details</h2>
+              <dl class="mt-3 divide-y divide-zinc-100 rounded-2xl ring-1 ring-zinc-200">
+                {product.specs.map((s) => (
+                  <div class="flex justify-between gap-4 px-4 py-2.5 text-sm">
+                    <dt class="text-zinc-500">{s.name}</dt>
+                    <dd class="text-right font-medium text-zinc-800">{s.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+          )}
+        </div>
+      )
+    }
+  </div>
+
+  <ProductRail title="You may also need" href={crumbs.length ? crumbs[crumbs.length - 1]!.href : undefined} products={product.related} />
+</Layout>

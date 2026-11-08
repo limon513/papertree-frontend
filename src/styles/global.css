@@ -127,3 +127,16 @@
 html:has(dialog[open]) {
   overflow: hidden;
 }
+
+/*
+ * Product page on phones: the buy buttons are pinned above the tab bar. Leave room for them at the
+ * end of the page, and show the "Added" notice above them.
+ */
+@media (width < 48rem) {
+  body:has([data-buy-bar]) {
+    padding-bottom: calc(8.5rem + env(safe-area-inset-bottom));
+  }
+  body:has([data-buy-bar]) .added-notice {
+    bottom: calc(9rem + env(safe-area-inset-bottom));
+  }
+}

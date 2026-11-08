@@ -1,0 +1,111 @@
+---
+import { ImageOff } from 'lucide-preact';
+import type { Img } from '@/lib/types';
+import { imageAt, srcSet } from '@/lib/utils';
+
+/**
+ * Product pictures: one strip that swipes on phones and is steered by thumbnails on computers, so
+ * each picture loads once. Choosing an option with its own picture shows it (event "pt:picture").
+ */
+interface Props {
+  pictures: Img[];
+  name: string;
+  /** The picture to start on (the chosen option's own picture). */
+  start?: number;
+}
+const { pictures, name, start = 0 } = Astro.props;
+---
+
+{
+  pictures.length === 0 ? (
+    <div class="flex aspect-square items-center justify-center rounded-3xl bg-zinc-50 text-zinc-300">
+      <ImageOff class="size-12" />
+    </div>
+  ) : (
+    <div data-gallery data-start={start} class="md:sticky md:top-32 md:self-start">
+      <div data-strip class="scrollbar-none -mx-4 flex snap-x snap-mandatory overflow-x-auto sm:mx-0 sm:rounded-3xl" tabindex="-1">
+        {pictures.map((p, i) => (
+          <div class="aspect-square w-full shrink-0 snap-center bg-zinc-50">
+            <img
+              src={imageAt(p, 800)}
+              srcset={srcSet(p)}
+              sizes="(min-width: 1280px) 600px, (min-width: 768px) 50vw, 100vw"
+              width={p.width}
+              height={p.height}
+              alt={p.alt ?? (i === 0 ? name : `${name}, picture ${i + 1}`)}
+              loading={i === start ? 'eager' : 'lazy'}
+              fetchpriority={i === start ? 'high' : undefined}
+              decoding="async"
+              class="size-full object-contain p-4 sm:p-6"
+            />
+          </div>
+        ))}
+      </div>
+      {pictures.length > 1 && (
+        <>
+          <div class="mt-2 flex justify-center gap-1.5 md:hidden" aria-hidden="true">
+            {pictures.map((_, i) => (
+              <span data-dot class:list={['h-1.5 rounded-full transition-all', i === start ? 'w-5 bg-brand-700' : 'w-1.5 bg-zinc-300']} />
+            ))}
+          </div>
+          <div class="mt-3 hidden flex-wrap gap-2 md:flex">
+            {pictures.map((p, i) => (
+              <button
+                type="button"
+                data-thumb={i}
+                aria-label={`Picture ${i + 1}`}
+                aria-current={i === start ? 'true' : undefined}
+                class="size-16 overflow-hidden rounded-xl bg-zinc-50 ring-2 ring-transparent hover:ring-zinc-300 aria-[current=true]:ring-brand-600"
+              >
+                <img src={imageAt(p, 160)} alt="" width="64" height="64" loading="lazy" class="size-full object-contain p-1" />
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+<script>
+  for (const gallery of document.querySelectorAll<HTMLElement>('[data-gallery]')) {
+    const strip = gallery.querySelector<HTMLElement>('[data-strip]')!;
+    const dots = gallery.querySelectorAll<HTMLElement>('[data-dot]');
+    const thumbs = gallery.querySelectorAll<HTMLButtonElement>('[data-thumb]');
+    let current = Number(gallery.dataset.start) || 0;
+
+    const mark = (i: number) => {
+      current = i;
+      dots.forEach((d, n) => {
+        d.classList.toggle('w-5', n === i);
+        d.classList.toggle('bg-brand-700', n === i);
+        d.classList.toggle('w-1.5', n !== i);
+        d.classList.toggle('bg-zinc-300', n !== i);
+      });
+      thumbs.forEach((t, n) => (n === i ? t.setAttribute('aria-current', 'true') : t.removeAttribute('aria-current')));
+    };
+    const show = (i: number, smooth = true) => {
+      strip.scrollTo({ left: i * strip.clientWidth, behavior: smooth ? 'smooth' : 'instant' });
+      mark(i);
+    };
+
+    // Start on the chosen option's picture.
+    if (current > 0) show(current, false);
+    strip.addEventListener('scroll', () => {
+      const i = Math.round(strip.scrollLeft / strip.clientWidth);
+      if (i !== current) mark(i);
+    }, { passive: true });
+    thumbs.forEach((t) => t.addEventListener('click', () => show(Number(t.dataset.thumb))));
+    // Keyboard: arrows move between pictures.
+    gallery.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') show(Math.min(strip.children.length - 1, current + 1));
+      if (e.key === 'ArrowLeft') show(Math.max(0, current - 1));
+    });
+    // The buy box chose an option with its own picture.
+    document.addEventListener('pt:picture', (e) => {
+      const i = (e as CustomEvent<number>).detail;
+      if (i >= 0 && i !== current) show(i);
+    });
+    addEventListener('resize', () => show(current, false));
+  }
+</script>
