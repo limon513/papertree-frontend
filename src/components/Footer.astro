@@ -1,0 +1,92 @@
+---
+import { Clock, Mail, MapPin, Phone } from 'lucide-preact';
+import type { Catalog } from '@/lib/types';
+import { links } from '@/lib/utils';
+
+interface Props {
+  catalog: Catalog;
+}
+const { store, categories } = Astro.props.catalog;
+const SOCIAL_LABELS = { facebook: 'Facebook', instagram: 'Instagram', youtube: 'YouTube', tiktok: 'TikTok' } as const;
+const social = Object.entries(store.social).filter((e): e is [keyof typeof SOCIAL_LABELS, string] => !!e[1]);
+---
+
+<footer class="mt-12 bg-brand-950 text-brand-100">
+  <div class="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
+    <div>
+      <div class="font-display text-xl font-bold text-white uppercase">{store.name}</div>
+      {store.tagline && <p class="mt-2 text-sm text-brand-200">{store.tagline}</p>}
+      {
+        social.length > 0 && (
+          <ul class="mt-4 flex flex-wrap gap-2">
+            {social.map(([key, url]) => (
+              <li>
+                <a href={url} target="_blank" rel="noopener noreferrer" class="rounded-full bg-white/10 px-3 py-1.5 text-sm hover:bg-white/20">
+                  {SOCIAL_LABELS[key]}
+                </a>
+              </li>
+            ))}
+          </ul>
+        )
+      }
+    </div>
+    <div>
+      <h2 class="text-sm font-semibold tracking-wide text-white uppercase">Shop</h2>
+      <ul class="mt-3 space-y-2 text-sm">
+        {categories.slice(0, 8).map((c) => <li><a href={links.category([c.slug])} class="hover:text-white">{c.name}</a></li>)}
+      </ul>
+    </div>
+    <div>
+      <h2 class="text-sm font-semibold tracking-wide text-white uppercase">More</h2>
+      <ul class="mt-3 space-y-2 text-sm">
+        <li><a href="/deals/" class="hover:text-white">Deals</a></li>
+        <li><a href="/new/" class="hover:text-white">New arrivals</a></li>
+        <li><a href="/brands/" class="hover:text-white">All brands</a></li>
+        <li><a href="/shop/" class="hover:text-white">All products</a></li>
+      </ul>
+    </div>
+    <div>
+      <h2 class="text-sm font-semibold tracking-wide text-white uppercase">Contact us</h2>
+      <ul class="mt-3 space-y-2.5 text-sm">
+        {
+          store.phone && (
+            <li class="flex gap-2">
+              <Phone class="mt-0.5 size-4 shrink-0" />
+              <a href={`tel:${store.phone}`} class="hover:text-white">{store.phone}</a>
+            </li>
+          )
+        }
+        {
+          store.email && (
+            <li class="flex gap-2">
+              <Mail class="mt-0.5 size-4 shrink-0" />
+              <a href={`mailto:${store.email}`} class="break-all hover:text-white">{store.email}</a>
+            </li>
+          )
+        }
+        {
+          store.address && (
+            <li class="flex gap-2">
+              <MapPin class="mt-0.5 size-4 shrink-0" />
+              {store.address}
+            </li>
+          )
+        }
+        {
+          store.openingHours && (
+            <li class="flex gap-2">
+              <Clock class="mt-0.5 size-4 shrink-0" />
+              {store.openingHours}
+            </li>
+          )
+        }
+      </ul>
+    </div>
+  </div>
+  <div class="border-t border-white/10">
+    <div class="mx-auto flex max-w-7xl flex-wrap justify-between gap-2 px-4 py-4 text-xs text-brand-300 sm:px-6">
+      <span>© {new Date().getFullYear()} {store.name} Bangladesh</span>
+      <span>Cash on delivery · bKash · Nagad · Cards</span>
+    </div>
+  </div>
+</footer>

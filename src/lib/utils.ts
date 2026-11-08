@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { PUBLIC_API_URL, PUBLIC_SITE_URL } from 'astro:env/client';
 import type { Img } from './types';
 
 export const cn = (...inputs: ClassValue[]) => twMerge(clsx(inputs));
@@ -13,8 +14,8 @@ export const money = (value: number) => `৳${taka.format(value)}`;
 export const percentOff = (price: number, regular: number | null) =>
   regular && regular > price ? Math.floor(((regular - price) / regular) * 100) : 0;
 
-export const API_PUBLIC_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
-export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
+export const API_PUBLIC_URL = PUBLIC_API_URL.replace(/\/$/, '');
+export const SITE_URL = PUBLIC_SITE_URL.replace(/\/$/, '');
 
 /** Category and brand icons are served by the API. */
 export const iconUrl = (key: string) => `${API_PUBLIC_URL}/icons/${key}.svg`;

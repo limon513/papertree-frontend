@@ -1,11 +1,10 @@
-'use client';
-
-import { useSyncExternalStore } from 'react';
+import { useEffect, useState } from 'preact/hooks';
+import { computed, signal } from '@preact/signals';
 import type { Img } from './types';
 
 /**
- * The cart and the chosen delivery place live in the browser (localStorage), so adding is instant
- * and works on slow connections. Prices and stock are checked again with the API when the cart opens.
+ * The cart and delivery place live in the browser (localStorage). Every island (Add buttons,
+ * header cart, drawer) reads the same signals, so a change shows everywhere at once.
  */
 
 export interface CartItem {
@@ -18,14 +17,12 @@ export interface CartItem {
   price: number;
   regularPrice: number | null;
   quantity: number;
-  /** null = no limit. */
   maxQuantity: number | null;
 }
 
 export interface DeliverTo {
   districtId: string;
   areaId: string | null;
-  /** "Mirpur, Dhaka". */
   label: string;
 }
 
@@ -37,124 +34,109 @@ interface State {
 const KEY = 'papertree-cart-v1';
 const EMPTY: State = { items: [], deliverTo: null };
 
-let state: State = EMPTY;
-let loaded = false;
-const listeners = new Set<() => void>();
-
-function load() {
-  if (loaded || typeof window === 'undefined') return;
-  loaded = true;
+function read(): State {
+  if (typeof window === 'undefined') return EMPTY;
   try {
     const saved = JSON.parse(localStorage.getItem(KEY) ?? 'null') as State | null;
-    if (saved && Array.isArray(saved.items)) state = { items: saved.items, deliverTo: saved.deliverTo ?? null };
+    return saved && Array.isArray(saved.items) ? { items: saved.items, deliverTo: saved.deliverTo ?? null } : EMPTY;
   } catch {
-    // Broken or blocked storage: start empty.
+    return EMPTY;
   }
+}
+
+/**
+ * Starts empty, like the page the server made (it cannot see the shopper's saved cart). Islands call
+ * useCart() which loads the saved cart once they are running, so the change is drawn properly.
+ */
+export const cartState = signal<State>(EMPTY);
+export const cartCount = computed(() => cartState.value.items.reduce((n, i) => n + i.quantity, 0));
+export const cartSubtotal = computed(() => Math.round(cartState.value.items.reduce((s, i) => s + i.price * i.quantity, 0) * 100) / 100);
+/** The last item added, for the "Added" notice. */
+export const lastAdded = signal<{ item: CartItem; at: number } | null>(null);
+
+let loaded = false;
+/** Reads the saved cart once, after the page has started (the server-made page shows an empty cart). */
+export function loadSaved() {
+  if (loaded || typeof window === 'undefined') return;
+  loaded = true;
+  cartState.value = read();
   // Another tab changed the cart.
   window.addEventListener('storage', (e) => {
-    if (e.key !== KEY) return;
-    try {
-      state = JSON.parse(e.newValue ?? 'null') ?? EMPTY;
-    } catch {
-      state = EMPTY;
-    }
-    listeners.forEach((l) => l());
+    if (e.key === KEY) cartState.value = read();
   });
 }
 
+/**
+ * The cart, for an island. Listens explicitly (subscribe, then take the current value), so it also
+ * sees the saved cart that loads while islands are starting. Signal auto-tracking missed that change.
+ */
+export function useCart() {
+  // Always start like the server-made page (empty cart): an island that starts later must not start
+  // with the loaded cart, or its first draw would not match the page and would not be corrected.
+  const [state, setState] = useState<State>(EMPTY);
+  useEffect(() => {
+    const stop = cartState.subscribe(setState);
+    loadSaved();
+    setState(cartState.peek());
+    return stop;
+  }, []);
+  return state;
+}
+
+export const countOf = (s: State) => s.items.reduce((n, i) => n + i.quantity, 0);
+export const subtotalOf = (s: State) => Math.round(s.items.reduce((sum, i) => sum + i.price * i.quantity, 0) * 100) / 100;
+
 function set(next: State) {
-  state = next;
+  cartState.value = next;
   try {
-    localStorage.setItem(KEY, JSON.stringify(state));
+    localStorage.setItem(KEY, JSON.stringify(next));
   } catch {
     // Private mode or full storage: the cart still works until the page closes.
   }
-  listeners.forEach((l) => l());
 }
 
-function subscribe(listener: () => void) {
-  load();
-  listeners.add(listener);
-  return () => listeners.delete(listener);
-}
-
-const getState = () => {
-  load();
-  return state;
-};
-const getServerState = () => EMPTY;
-
-const clamp = (quantity: number, max: number | null) => Math.max(0, max === null ? quantity : Math.min(quantity, max));
-
-// ---- "Added" notice ----
-
-type AddedListener = (item: CartItem) => void;
-const addedListeners = new Set<AddedListener>();
-export const onAdded = (listener: AddedListener) => {
-  addedListeners.add(listener);
-  return () => addedListeners.delete(listener);
-};
+const clamp = (q: number, max: number | null) => Math.max(0, max === null ? q : Math.min(q, max));
 
 export const cart = {
   add(item: Omit<CartItem, 'quantity'>, quantity = 1) {
-    const current = getState();
-    const existing = current.items.find((i) => i.variantId === item.variantId);
+    const s = cartState.value;
+    const existing = s.items.find((i) => i.variantId === item.variantId);
     const items = existing
-      ? current.items.map((i) => (i.variantId === item.variantId ? { ...i, ...item, quantity: clamp(i.quantity + quantity, item.maxQuantity) } : i))
-      : [...current.items, { ...item, quantity: clamp(quantity, item.maxQuantity) }];
-    set({ ...current, items });
+      ? s.items.map((i) => (i.variantId === item.variantId ? { ...i, ...item, quantity: clamp(i.quantity + quantity, item.maxQuantity) } : i))
+      : [...s.items, { ...item, quantity: clamp(quantity, item.maxQuantity) }];
+    set({ ...s, items });
     const added = items.find((i) => i.variantId === item.variantId);
-    if (added) addedListeners.forEach((l) => l(added));
+    if (added) lastAdded.value = { item: added, at: Date.now() };
   },
   setQuantity(variantId: number, quantity: number) {
-    const current = getState();
+    const s = cartState.value;
     set({
-      ...current,
-      items: current.items
-        .map((i) => (i.variantId === variantId ? { ...i, quantity: clamp(quantity, i.maxQuantity) } : i))
-        .filter((i) => i.quantity > 0),
+      ...s,
+      items: s.items.map((i) => (i.variantId === variantId ? { ...i, quantity: clamp(quantity, i.maxQuantity) } : i)).filter((i) => i.quantity > 0),
     });
   },
-  remove(variantId: number) {
-    const current = getState();
-    set({ ...current, items: current.items.filter((i) => i.variantId !== variantId) });
-  },
-  /** Takes in what the API said: today's prices, names and stock limits. */
   update(fresh: (Partial<CartItem> & { variantId: number })[], gone: number[]) {
-    const current = getState();
+    const s = cartState.value;
     const byId = new Map(fresh.map((f) => [f.variantId, f]));
     set({
-      ...current,
-      items: current.items
+      ...s,
+      items: s.items
         .filter((i) => !gone.includes(i.variantId))
         .map((i) => {
           const f = byId.get(i.variantId);
-          if (!f) return i;
-          const merged = { ...i, ...f };
+          const merged = f ? { ...i, ...f } : i;
           return { ...merged, quantity: clamp(merged.quantity, merged.maxQuantity) };
         })
         .filter((i) => i.quantity > 0),
     });
   },
-  clear() {
-    set({ ...getState(), items: [] });
-  },
   setDeliverTo(deliverTo: DeliverTo | null) {
-    set({ ...getState(), deliverTo });
+    set({ ...cartState.value, deliverTo });
   },
 };
 
-export function useCart() {
-  const s = useSyncExternalStore(subscribe, getState, getServerState);
-  return {
-    items: s.items,
-    deliverTo: s.deliverTo,
-    count: s.items.reduce((n, i) => n + i.quantity, 0),
-    subtotal: Math.round(s.items.reduce((sum, i) => sum + i.price * i.quantity, 0) * 100) / 100,
-  };
-}
+export const quantityOf = (variantId: number | null) =>
+  variantId === null ? 0 : (cartState.value.items.find((i) => i.variantId === variantId)?.quantity ?? 0);
 
-export function useCartQuantity(variantId: number | null) {
-  const s = useSyncExternalStore(subscribe, getState, getServerState);
-  return variantId === null ? 0 : (s.items.find((i) => i.variantId === variantId)?.quantity ?? 0);
-}
+/** Which panel is open. */
+export const panel = signal<'cart' | 'deliver-to' | null>(null);

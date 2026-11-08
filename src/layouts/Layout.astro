@@ -1,0 +1,159 @@
+---
+import '@/styles/global.css';
+import displayFont from '@fontsource/bricolage-grotesque/files/bricolage-grotesque-latin-700-normal.woff2?url';
+import { Home, LayoutGrid, Percent, Phone, Search } from 'lucide-preact';
+import { getCatalog } from '@/lib/api';
+import type { Img } from '@/lib/types';
+import { imageAt, links, SITE_URL, srcSet } from '@/lib/utils';
+import CategoriesMenu from '@/components/CategoriesMenu.astro';
+import Footer from '@/components/Footer.astro';
+import IconSprite from '@/components/IconSprite.astro';
+import SearchBox from '@/components/islands/SearchBox';
+import { HeaderCart, TabCart } from '@/components/islands/CartButtons';
+import { DeliverToButton, DeliverToDialog } from '@/components/islands/DeliverTo';
+import { AddedNotice, CartDrawer } from '@/components/islands/CartPanels';
+
+interface Props {
+  /** Page title; " | PaperTree" is added unless `fullTitle` is set. */
+  title: string;
+  fullTitle?: boolean;
+  description?: string;
+  /** The page's own address (path), for Google. Defaults to this address without ?options. */
+  canonical?: string;
+  /** Picture shown when the link is shared on Facebook / WhatsApp. */
+  image?: Img | null;
+  /** Keep this page out of Google (search results, cart). */
+  noindex?: boolean;
+  /** schema.org data for Google (products, breadcrumbs...). */
+  jsonLd?: object[];
+  /** What the search box starts with (on the search page). */
+  query?: string;
+}
+const { title, fullTitle = false, description, canonical, image, noindex = false, jsonLd = [], query = '' } = Astro.props;
+const catalog = await getCatalog();
+const { store, categories } = catalog;
+const path = Astro.url.pathname;
+const pageTitle = fullTitle ? title : `${title} | ${store.name}`;
+const pageDescription = description ?? store.tagline ?? 'Paper, stationery and art supplies, delivered across Bangladesh.';
+const canonicalUrl = SITE_URL + (canonical ?? path);
+const shareImage = image ?? store.logo;
+// Product pictures come from another address: open the connection early.
+const imageOrigin = store.logo ? new URL(imageAt(store.logo, 160)).origin : null;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1d5b2c" />
+    <meta name="format-detection" content="telephone=no" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={pageDescription} />
+    {noindex ? <meta name="robots" content="noindex, follow" /> : <link rel="canonical" href={canonicalUrl} />}
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preload" href={displayFont} as="font" type="font/woff2" crossorigin />
+    {imageOrigin && <link rel="preconnect" href={imageOrigin} />}
+    <meta property="og:site_name" content={`${store.name} Bangladesh`} />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en_BD" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={pageDescription} />
+    <meta property="og:url" content={canonicalUrl} />
+    {shareImage && <meta property="og:image" content={imageAt(shareImage, 800)} />}
+    <meta name="twitter:card" content="summary_large_image" />
+    {jsonLd.map((data) => <script type="application/ld+json" is:inline set:html={JSON.stringify(data).replace(/</g, '\\u003c')} />)}
+  </head>
+  <body class="font-sans">
+    <IconSprite />
+    <a href="#main" class="sr-only rounded-full bg-brand-700 px-4 py-2 text-white focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50">Skip to content</a>
+    <header class="sticky top-0 z-40 border-b border-zinc-200/80 bg-white/95 backdrop-blur">
+      <div class="mx-auto flex max-w-7xl items-center gap-3 px-4 py-2.5 sm:px-6 lg:gap-6">
+        <a href="/" class="flex shrink-0 items-center gap-2" aria-label={`${store.name} home`}>
+          {
+            store.logo && (
+              <img src={imageAt(store.logo, 160)} srcset={srcSet(store.logo)} sizes="56px" alt="" width={store.logo.width} height={store.logo.height} class="h-10 w-auto sm:h-11" />
+            )
+          }
+          <span class="leading-none">
+            <span class="block font-display text-lg font-bold tracking-tight text-brand-800 uppercase sm:text-xl">{store.name}</span>
+            <span class="block text-[10px] font-medium tracking-[0.3em] text-zinc-500 uppercase">Bangladesh</span>
+          </span>
+        </a>
+        <DeliverToButton client:idle className="hidden max-w-48 lg:flex" />
+        <SearchBox client:idle initial={query} className="hidden flex-1 md:block" />
+        <div class="ml-auto flex items-center gap-2 md:ml-0">
+          {
+            store.phone && (
+              <a href={`tel:${store.phone}`} class="hidden items-center gap-2 text-sm xl:flex">
+                <Phone class="size-4 text-brand-600" />
+                <span class="leading-tight">
+                  <span class="block text-[11px] text-zinc-500">Order by phone</span>
+                  <span class="block font-medium text-zinc-800">{store.phone}</span>
+                </span>
+              </a>
+            )
+          }
+          <HeaderCart client:idle className="hidden lg:flex" />
+        </div>
+      </div>
+
+      <!-- Phones and tablets: search under the logo, then the delivery area. -->
+      <div class="px-4 pb-2.5 sm:px-6 md:hidden">
+        <SearchBox client:idle initial={query} />
+        <DeliverToButton client:idle compact className="mt-2 max-w-full" />
+      </div>
+
+      <nav class="mx-auto hidden max-w-7xl items-center gap-1 px-6 pb-2.5 lg:flex" aria-label="Categories">
+        <CategoriesMenu categories={categories} />
+        <ul class="scrollbar-none flex flex-1 items-center gap-1 overflow-x-auto">
+          {
+            categories.slice(0, 7).map((c) => (
+              <li>
+                <a href={links.category([c.slug])} class="block rounded-full px-3 py-2 text-sm whitespace-nowrap text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900">
+                  {c.name}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+        <a href="/deals/" class="rounded-full bg-marigold-100 px-3 py-2 text-sm font-semibold whitespace-nowrap text-zinc-900 hover:bg-marigold-200">Deals</a>
+        <a href="/brands/" class="rounded-full px-3 py-2 text-sm whitespace-nowrap text-zinc-700 hover:bg-zinc-100">Brands</a>
+      </nav>
+    </header>
+
+    <main id="main" class="min-h-[60vh]"><slot /></main>
+
+    <Footer catalog={catalog} />
+
+    <!-- Bottom tab bar on phones and tablets. -->
+    <nav aria-label="Main" class="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
+      <ul class="mx-auto grid h-16 max-w-lg grid-cols-5">
+        {
+          [
+            { href: '/', label: 'Home', Icon: Home, active: path === '/' },
+            { href: '/categories/', label: 'Categories', Icon: LayoutGrid, active: path.startsWith('/categories') || path.startsWith('/product-category') },
+            { href: '/search/', label: 'Search', Icon: Search, active: path.startsWith('/search') },
+            { href: '/deals/', label: 'Deals', Icon: Percent, active: path.startsWith('/deals') },
+          ].map(({ href, label, Icon, active }) => (
+            <li>
+              <a
+                href={href}
+                aria-current={active ? 'page' : undefined}
+                class:list={['flex h-full flex-col items-center justify-center gap-0.5 text-[11px] font-medium', active ? 'text-brand-700' : 'text-zinc-500']}
+              >
+                <Icon class="size-[22px]" strokeWidth={active ? 2.4 : 1.8} />
+                {label}
+              </a>
+            </li>
+          ))
+        }
+        <li><TabCart client:idle /></li>
+      </ul>
+    </nav>
+
+    <CartDrawer client:idle />
+    <DeliverToDialog client:idle />
+    <AddedNotice client:idle />
+  </body>
+</html>

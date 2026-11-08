@@ -1,0 +1,27 @@
+---
+// Shown when a page fails (for example the shop API is down). Uses nothing from the API.
+import '@/styles/global.css';
+import { RefreshCw } from 'lucide-preact';
+Astro.response.headers.set('cache-control', 'no-store');
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Please try again | PaperTree</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+  <body class="font-sans">
+    <div class="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center px-4 text-center">
+      <img src="/favicon.svg" alt="" width="56" height="56" />
+      <h1 class="mt-5 font-display text-2xl font-bold">This page could not load</h1>
+      <p class="mt-2 text-zinc-600">Our shop is having a short hiccup. Your cart is safe. Please try again in a moment.</p>
+      <a href="" class="mt-6 flex items-center gap-2 rounded-full bg-brand-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-800">
+        <RefreshCw class="size-4" /> Try again
+      </a>
+    </div>
+  </body>
+</html>
