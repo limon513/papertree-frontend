@@ -11,7 +11,10 @@ export const SORT_OPTIONS = [
   { value: 'deals', label: 'Biggest discount' },
 ] as const;
 
-const SORTS: string[] = [...SORT_OPTIONS.map((o) => o.value), 'name'];
+/** On the search page: best match first. */
+export const SEARCH_SORT_OPTIONS = [{ value: 'relevance', label: 'Best match' }, ...SORT_OPTIONS] as const;
+
+const SORTS: string[] = [...SEARCH_SORT_OPTIONS.map((o) => o.value), 'name'];
 const whole = (v: string | null) => (v && /^\d{1,7}$/.test(v) ? v : undefined);
 
 /**
@@ -42,10 +45,15 @@ export function listParams(q: URLSearchParams) {
 }
 export type ListParams = ReturnType<typeof listParams>;
 
-/** This list's address with some options changed (null removes one). Page numbers reset unless set. */
+/**
+ * This list's address with some options changed (null removes one). Page numbers reset unless set.
+ * `path` may carry fixed options of its own ("/search/?q=pen"); they are kept, first.
+ */
 export function hrefWith(path: string, params: ListParams, changes: Partial<Record<keyof ListParams, string | string[] | null>>) {
   const merged: Record<string, string | string[] | undefined | null> = { ...params, page: undefined, ...changes };
-  const q = new URLSearchParams();
+  const [base, fixed] = path.split('?') as [string, string | undefined];
+  path = base;
+  const q = new URLSearchParams(fixed);
   for (const key of ['sort', ...FILTER_KEYS, 'page']) {
     const v = merged[key];
     if (v === undefined || v === null || v === '' || (Array.isArray(v) && !v.length)) continue;

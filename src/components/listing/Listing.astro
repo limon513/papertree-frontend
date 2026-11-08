@@ -21,8 +21,10 @@ interface Props {
   defaultSort?: string;
   /** The API address for this page's products (its fixed filters included), for the live count. */
   countUrl: string;
+  /** Sort choices (the search page adds "Best match"). */
+  sorts?: readonly { value: string; label: string }[];
 }
-const { title, intro, crumbs = [], list, params, path, subcategories = [], hide = [], defaultSort = 'popular', countUrl } = Astro.props;
+const { title, intro, crumbs = [], list, params, path, subcategories = [], hide = [], defaultSort = 'popular', countUrl, sorts = SORT_OPTIONS } = Astro.props;
 
 const pages = Math.max(1, Math.ceil(list.total / list.pageSize));
 const chips = activeChips(path, params, list.facets, hide);
@@ -50,6 +52,7 @@ const pageLink = 'flex size-10 items-center justify-center rounded-full text-sm 
   <h1 class="font-display text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">{title}</h1>
   <p class="mt-1 text-sm text-zinc-500">{list.total} product{list.total === 1 ? '' : 's'}</p>
   {intro && <p class="mt-2 max-w-3xl text-sm text-zinc-600">{intro}</p>}
+  <slot name="notice" />
 
   {
     subcategories.length > 0 && (
@@ -97,7 +100,7 @@ const pageLink = 'flex size-10 items-center justify-center rounded-full text-sm 
         <label class="flex items-center gap-2 text-sm">
           <span class="hidden text-zinc-500 sm:inline">Sort</span>
           <select data-sort aria-label="Sort products" class="h-10 rounded-full border border-zinc-300 bg-white pr-8 pl-3 text-sm">
-            {SORT_OPTIONS.map((o) => (
+            {sorts.map((o) => (
               <option value={hrefWith(path, params, { sort: o.value === defaultSort ? null : o.value })} selected={o.value === currentSort}>
                 {o.label}
               </option>

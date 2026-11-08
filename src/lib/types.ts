@@ -89,6 +89,21 @@ export interface ProductList {
     brands: { slug: string; name: string; count: number }[];
     price: { min: number; max: number } | null;
   };
+  /** Set when searching (q). */
+  search: SearchInfo | null;
+}
+
+/** What a search really looked for. */
+export interface SearchInfo {
+  /** The words as typed (cleaned). */
+  query: string;
+  /** The words searched after spelling fixes. */
+  searched: string;
+  corrected: boolean;
+  /** No product had all the words: these have some of them. */
+  partial: boolean;
+  /** The words were exactly a product's SKU: its slug. */
+  sku?: string | null;
 }
 
 export interface ProductVariant {
@@ -130,6 +145,7 @@ export interface Suggestions {
   total: number;
   categories: { name: string; slug: string; icon: string | null }[];
   brands: { name: string; slug: string }[];
+  search: SearchInfo | null;
 }
 
 export interface Places {

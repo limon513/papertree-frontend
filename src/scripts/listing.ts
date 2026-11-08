@@ -103,19 +103,28 @@ if (sheet && staged && apply) {
     }, 250);
   };
 
-  document.querySelector('[data-open-filters]')?.addEventListener('click', () => sheet.showModal());
-  sheet.querySelector('[data-close-filters]')?.addEventListener('click', () => sheet.close());
-  // A tap on the dark area outside the sheet closes it.
-  sheet.addEventListener('click', (e) => e.target === sheet && sheet.close());
-  // Closed without "Show": back to the filters this page has.
-  sheet.addEventListener('close', () => {
-    if (sheet.returnValue === 'apply') return;
+  /** Closed without "Show": back to the filters this page has. */
+  const discard = () => {
     staged.reset();
     clearTimeout(timer);
     request?.abort();
     apply.textContent = label(pageTotal);
     apply.disabled = false;
+  };
+  const closeSheet = () => {
+    discard();
+    sheet.close();
+  };
+
+  document.querySelector('[data-open-filters]')?.addEventListener('click', () => {
+    sheet.returnValue = '';
+    sheet.showModal();
   });
+  sheet.querySelector('[data-close-filters]')?.addEventListener('click', closeSheet);
+  // A tap on the dark area outside the sheet closes it.
+  sheet.addEventListener('click', (e) => e.target === sheet && closeSheet());
+  // Escape or the phone's Back gesture close the sheet without our buttons.
+  sheet.addEventListener('close', () => sheet.returnValue !== 'apply' && discard());
 
   staged.addEventListener('change', recount);
   staged.addEventListener('input', (e) => (e.target as HTMLInputElement).type !== 'checkbox' && recount());

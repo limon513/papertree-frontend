@@ -1,0 +1,123 @@
+---
+import { MessageCircle, Search, Sparkles } from 'lucide-preact';
+import Layout from '@/layouts/Layout.astro';
+import Listing from '@/components/listing/Listing.astro';
+import RequestProduct from '@/components/RequestProduct.astro';
+import { getCatalog, getProducts } from '@/lib/api';
+import { hrefWith, listParams, SEARCH_SORT_OPTIONS } from '@/lib/listing';
+import { API_PUBLIC_URL, iconUrl, links } from '@/lib/utils';
+
+/**
+ * Search results. Typos are fixed and synonyms used by the API; a SKU typed exactly opens its product.
+ * Search pages stay out of Google (endless word combinations), but their links are followed.
+ */
+const q = (Astro.url.searchParams.get('q') ?? '').trim().slice(0, 100);
+const params = listParams(Astro.url.searchParams);
+const { store, categories } = await getCatalog();
+const list = q ? await getProducts({ q, ...params }) : null;
+const search = list?.search ?? null;
+
+// A SKU: straight to the product.
+if (search?.sku && !params.page) return Astro.redirect(links.product(search.sku));
+
+const path = `/search/?q=${encodeURIComponent(q)}`;
+if (list) {
+  const pages = Math.max(1, Math.ceil(list.total / list.pageSize));
+  if (list.page > pages && list.total > 0) return Astro.redirect(hrefWith(path, params, { page: pages > 1 ? String(pages) : null }));
+}
+const whatsapp = store.whatsapp
+  ? `https://wa.me/88${store.whatsapp}?text=${encodeURIComponent(`Hello PaperTree, do you have "${q}"?`)}`
+  : null;
+// Record the search once, from the browser (counts real visitors; not filter or page changes).
+const firstView = !params.page && !params.brand.length && !params.min && !params.max && !params.inStock && !params.onSale && !params.sort;
+Astro.response.headers.set('cache-control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
+---
+
+<Layout title={q ? `“${q}”` : 'Search'} description="Search PaperTree's stationery, paper and art supplies." noindex query={q} focusSearch={!q}>
+  {
+    !list ? (
+      <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10">
+        <h1 class="flex items-center gap-2 font-display text-2xl font-bold tracking-tight sm:text-3xl">
+          <Search class="size-7 text-brand-600" /> What are you looking for?
+        </h1>
+        <p class="mt-1 text-sm text-zinc-500">Type a product, brand or code above. Spelling mistakes are fine, and so is Banglish: “khata”, “kolom”, “rong pencil”.</p>
+        <h2 class="mt-8 text-sm font-semibold tracking-wide text-zinc-500 uppercase">Browse instead</h2>
+        <ul class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
+          {categories.map((c) => (
+            <li>
+              <a href={links.category([c.slug])} class="flex h-full items-center gap-2 rounded-2xl bg-white p-3 text-sm font-medium text-zinc-800 ring-1 ring-zinc-200/80 hover:ring-brand-300">
+                {c.icon ? <img src={iconUrl(c.icon)} alt="" width="28" height="28" class="size-7" /> : <Sparkles class="size-6 text-brand-600" />}
+                {c.name}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ) : (
+      <Listing
+        title={`Results for “${q}”`}
+        list={list}
+        params={params}
+        path={path}
+        defaultSort="relevance"
+        sorts={SEARCH_SORT_OPTIONS}
+        countUrl={`${API_PUBLIC_URL}/v1/store/products?q=${encodeURIComponent(q)}`}
+      >
+        {
+          search && (search.corrected || search.partial) && list.total > 0 && (
+            <p slot="notice" class="mt-3 max-w-3xl rounded-xl bg-marigold-50 px-3 py-2 text-sm text-zinc-700 ring-1 ring-marigold-200">
+              {search.corrected && (
+                <>
+                  Showing results for <strong class="text-zinc-900">“{search.searched}”</strong>.{' '}
+                </>
+              )}
+              {search.partial && <>No product has all of these words, so these match some of them.</>}
+            </p>
+          )
+        }
+        <Fragment slot="empty">
+          <p class="mt-3 font-display text-lg font-bold">Nothing found for “{q}”</p>
+          <p class="mt-1 max-w-md text-sm text-zinc-500">Try fewer or simpler words (“pen” instead of “blue gel pen 0.5”), or browse a category below.</p>
+          <RequestProduct query={q} />
+          {
+            whatsapp && (
+              <a href={whatsapp} target="_blank" rel="noopener noreferrer" class="mt-3 flex h-10 items-center gap-2 rounded-full px-4 text-sm font-semibold text-brand-700 ring-1 ring-brand-200 hover:bg-brand-50">
+                <MessageCircle class="size-4" /> Or ask us on WhatsApp
+              </a>
+            )
+          }
+          <ul class="mt-6 flex flex-wrap justify-center gap-2">
+            {categories.map((c) => (
+              <li>
+                <a href={links.category([c.slug])} class="block rounded-full bg-white px-3 py-1.5 text-sm text-zinc-700 ring-1 ring-zinc-200 hover:ring-brand-300">
+                  {c.name}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </Fragment>
+      </Listing>
+    )
+  }
+  {
+    list && firstView && (
+      <script
+        is:inline
+        data-search-log={JSON.stringify({ query: q, results: list.total, correctedTo: search?.corrected ? search.searched : null })}
+        data-api={API_PUBLIC_URL}
+      >
+        (() => {
+          const me = document.currentScript;
+          const body = me.dataset.searchLog;
+          // Once per search per visit (a reload or Back does not count again).
+          try {
+            const seen = JSON.parse(sessionStorage.getItem('pt-searches') || '[]');
+            if (seen.includes(body)) return;
+            sessionStorage.setItem('pt-searches', JSON.stringify([...seen, body].slice(-50)));
+          } catch {}
+          fetch(me.dataset.api + '/v1/store/search-log', { method: 'POST', headers: { 'content-type': 'application/json' }, body, keepalive: true }).catch(() => {});
+        })();
+      </script>
+    )
+  }
+</Layout>
