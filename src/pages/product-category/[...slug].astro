@@ -1,0 +1,51 @@
+---
+import Layout from '@/layouts/Layout.astro';
+import Listing from '@/components/listing/Listing.astro';
+import { getProducts, NotFound } from '@/lib/api';
+import { canonicalFor, hrefWith, listParams } from '@/lib/listing';
+import { breadcrumbs } from '@/lib/seo';
+import { API_PUBLIC_URL, links } from '@/lib/utils';
+
+// The last part of /product-category/paper/art-paper/ is the category.
+const parts = (Astro.params.slug ?? '').split('/').filter(Boolean);
+const params = listParams(Astro.url.searchParams);
+
+let list;
+try {
+  list = await getProducts({ category: parts[parts.length - 1], ...params });
+} catch (err) {
+  if (err instanceof NotFound) return Astro.rewrite('/404/');
+  throw err;
+}
+const category = list.category!;
+const path = category.path.map((p) => p.slug);
+const href = links.category(path);
+
+// One address per category: /product-category/art-paper/ goes to /product-category/paper/art-paper/.
+if (parts.join('/') !== path.join('/')) return Astro.redirect(hrefWith(href, params, { page: params.page ?? null }), 301);
+// Past the last page (an old link, or fewer products now): the last page.
+const pages = Math.max(1, Math.ceil(list.total / list.pageSize));
+if (list.page > pages && list.total > 0) return Astro.redirect(hrefWith(href, params, { page: pages > 1 ? String(pages) : null }));
+
+const crumbs = category.path.map((p, i) => ({ name: p.name, href: links.category(path.slice(0, i + 1)) }));
+Astro.response.headers.set('cache-control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
+---
+
+<Layout
+  title={category.seoTitle ?? `${category.name} — buy online in Bangladesh`}
+  description={category.seoDescription ?? category.description ?? `Shop ${category.name.toLowerCase()} online with cash on delivery across Bangladesh.`}
+  canonical={canonicalFor(href, params)}
+  image={category.image}
+  jsonLd={[breadcrumbs(crumbs)]}
+>
+  <Listing
+    title={category.name}
+    intro={category.description}
+    crumbs={crumbs.slice(0, -1)}
+    list={list}
+    params={params}
+    path={href}
+    countUrl={`${API_PUBLIC_URL}/v1/store/products?category=${encodeURIComponent(category.slug)}`}
+    subcategories={category.children.map((c) => ({ name: c.name, href: links.category([...path, c.slug]), icon: c.icon, count: c.productCount }))}
+  />
+</Layout>

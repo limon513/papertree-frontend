@@ -1,0 +1,38 @@
+---
+import Layout from '@/layouts/Layout.astro';
+import Listing from '@/components/listing/Listing.astro';
+import { getCatalog, getProducts } from '@/lib/api';
+import { canonicalFor, hrefWith, listParams } from '@/lib/listing';
+import { breadcrumbs } from '@/lib/seo';
+import { API_PUBLIC_URL, links } from '@/lib/utils';
+
+const brand = (await getCatalog()).brands.find((b) => b.slug === Astro.params.slug);
+if (!brand) return Astro.rewrite('/404/');
+
+const params = listParams(Astro.url.searchParams);
+const list = await getProducts({ ...params, brand: [brand.slug] });
+const href = links.brand(brand.slug);
+const pages = Math.max(1, Math.ceil(list.total / list.pageSize));
+if (list.page > pages && list.total > 0) return Astro.redirect(hrefWith(href, params, { page: pages > 1 ? String(pages) : null }));
+
+const crumbs = [{ name: 'Brands', href: '/brands/' }, { name: brand.name, href }];
+Astro.response.headers.set('cache-control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
+---
+
+<Layout
+  title={`${brand.name} products — buy online in Bangladesh`}
+  description={`Original ${brand.name} stationery and art supplies with cash on delivery across Bangladesh.`}
+  canonical={canonicalFor(href, params)}
+  image={brand.image}
+  jsonLd={[breadcrumbs(crumbs)]}
+>
+  <Listing
+    title={brand.name}
+    crumbs={crumbs.slice(0, -1)}
+    list={list}
+    params={{ ...params, brand: [] }}
+    path={href}
+    hide={['brand']}
+    countUrl={`${API_PUBLIC_URL}/v1/store/products?brand=${encodeURIComponent(brand.slug)}`}
+  />
+</Layout>

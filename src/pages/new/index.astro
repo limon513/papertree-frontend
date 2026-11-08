@@ -1,0 +1,17 @@
+---
+import Layout from '@/layouts/Layout.astro';
+import Listing from '@/components/listing/Listing.astro';
+import { getProducts } from '@/lib/api';
+import { canonicalFor, hrefWith, listParams } from '@/lib/listing';
+import { API_PUBLIC_URL } from '@/lib/utils';
+
+const params = listParams(Astro.url.searchParams);
+const list = await getProducts({ ...params, sort: params.sort ?? 'newest' });
+const pages = Math.max(1, Math.ceil(list.total / list.pageSize));
+if (list.page > pages && list.total > 0) return Astro.redirect(hrefWith('/new/', params, { page: pages > 1 ? String(pages) : null }));
+Astro.response.headers.set('cache-control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
+---
+
+<Layout title="New arrivals" description="The newest stationery, paper and art supplies at PaperTree, with cash on delivery across Bangladesh." canonical={canonicalFor('/new/', params)}>
+  <Listing title="New arrivals" list={list} params={params} path="/new/" defaultSort="newest" countUrl={`${API_PUBLIC_URL}/v1/store/products`} />
+</Layout>
