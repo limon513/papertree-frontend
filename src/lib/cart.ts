@@ -145,6 +145,21 @@ export const cart = {
     const s = cartState.value;
     set({ ...s, items: s.items.filter((i) => !variantIds.includes(i.variantId)), skip: s.skip.filter((id) => !variantIds.includes(id)) });
   },
+  /** Put an item in the cart with exactly this quantity (adds it, or changes the quantity). */
+  put(item: Omit<CartItem, 'quantity'>, quantity: number) {
+    const s = cartState.value;
+    const q = clamp(quantity, item.maxQuantity);
+    if (q <= 0) return;
+    const items = s.items.some((i) => i.variantId === item.variantId)
+      ? s.items.map((i) => (i.variantId === item.variantId ? { ...i, ...item, quantity: q } : i))
+      : [...s.items, { ...item, quantity: q }];
+    set({ ...s, items });
+  },
+  /** Tick only these for checkout; the rest stay in the cart, unticked. */
+  only(variantIds: number[]) {
+    const s = cartState.value;
+    set({ ...s, skip: s.items.map((i) => i.variantId).filter((id) => !variantIds.includes(id)) });
+  },
   /** Tick or untick an item for checkout (all are ticked unless unticked). */
   select(variantId: number, selected: boolean) {
     const s = cartState.value;

@@ -4,11 +4,28 @@ import { api, signedIn, signInOpen, type Me } from '@/lib/account';
 import type { GoogleConfig } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
-type Step = 'phone' | 'code' | 'name';
+/** choose: Google (recommended) or phone. phone: type the number. */
+type Step = 'choose' | 'phone' | 'code' | 'name';
 type ApiError = { error?: { code?: string; message?: string; fields?: Record<string, string> } };
 
 const input = 'mt-1 h-12 w-full rounded-xl border border-zinc-300 bg-white px-3.5 text-[16px] outline-none focus:border-brand-500 focus:ring-3 focus:ring-brand-100 aria-[invalid=true]:border-red-500';
-const cleanPhone = (v: string) => v.replace(/[\s()-]/g, '').replace(/^\+?880/, '0');
+/** What they type after +880: "01712-345678", "+8801712345678" or "1712345678" all become "1712345678". */
+const localDigits = (v: string) => {
+  let d = v.replace(/\D/g, '');
+  if (d.startsWith('880')) d = d.slice(3);
+  if (d.startsWith('0')) d = d.slice(1);
+  return d.slice(0, 10);
+};
+/** "1712345678" -> "1712 345678" (easier to check by eye). */
+const spaced = (d: string) => (d.length > 4 ? `${d.slice(0, 4)} ${d.slice(4)}` : d);
+
+/** Bangladesh's flag (an emoji flag shows as letters on Windows). */
+const BdFlag = () => (
+  <svg viewBox="0 0 20 12" class="h-3.5 w-6 rounded-[2px]" aria-hidden="true">
+    <rect width="20" height="12" fill="#006a4e" />
+    <circle cx="9" cy="6" r="3.6" fill="#f42a41" />
+  </svg>
+);
 
 /** Google's own "G", in its colours (Google asks for it on sign-in buttons). */
 const GoogleG = () => (
@@ -37,7 +54,7 @@ async function googleIdToken(config: GoogleConfig) {
  */
 export default function SignIn({ google }: { google: GoogleConfig | null }) {
   const open = signInOpen.value;
-  const [step, setStep] = useState<Step>('phone');
+  const [step, setStep] = useState<Step>(google ? 'choose' : 'phone');
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
@@ -51,14 +68,14 @@ export default function SignIn({ google }: { google: GoogleConfig | null }) {
 
   useEffect(() => {
     if (!open) return;
-    setStep('phone');
+    setStep(google ? 'choose' : 'phone');
     setCode('');
     setError(null);
     setTicket(null);
     setDevCode(null);
     try {
       const saved = JSON.parse(localStorage.getItem('pt-contact') ?? 'null') as { phone?: string } | null;
-      if (saved?.phone) setPhone(saved.phone);
+      if (saved?.phone) setPhone(localDigits(saved.phone));
     } catch {
       // ignore
     }
@@ -91,15 +108,15 @@ export default function SignIn({ google }: { google: GoogleConfig | null }) {
 
   const sendCode = async (e?: Event) => {
     e?.preventDefault();
-    const p = cleanPhone(phone);
-    if (!/^0\d{9,10}$/.test(p)) return setError('Enter a Bangladeshi number, like 01712345678');
+    // Mobile numbers only (the code comes by SMS): 1 then 3-9, 10 digits after +880.
+    if (!/^1[3-9]\d{8}$/.test(phone)) return setError('Enter your mobile number, like 1712 345678');
+    const p = `0${phone}`;
     setError(null);
     setBusy('code');
     try {
       const res = await api('/auth/code', { phone: p });
       const data = (await res.json()) as { seconds?: number; devCode?: string } & ApiError;
       if (!res.ok) return setError(data.error?.fields?.phone ?? data.error?.message ?? 'Could not send the code. Please try again.');
-      setPhone(p);
       setCode('');
       setDevCode(data.devCode ?? null);
       setWait(data.seconds ?? 60);
@@ -118,7 +135,7 @@ export default function SignIn({ google }: { google: GoogleConfig | null }) {
     setError(null);
     setBusy('verify');
     try {
-      const res = await api('/auth/verify', { phone, code: codeNow, ...(step === 'name' && { name: name.trim() }), ...(ticket && { googleTicket: ticket.ticket }) });
+      const res = await api('/auth/verify', { phone: `0${phone}`, code: codeNow, ...(step === 'name' && { name: name.trim() }), ...(ticket && { googleTicket: ticket.ticket }) });
       const data = (await res.json()) as { customer?: Me; needsName?: boolean } & ApiError;
       if (res.ok && data.customer) return done(data.customer);
       if (res.ok && data.needsName) {
@@ -163,7 +180,8 @@ export default function SignIn({ google }: { google: GoogleConfig | null }) {
     }
   };
 
-  const title = step === 'phone' ? (ticket ? 'Add your phone number' : 'Sign in or create an account') : step === 'code' ? 'Enter the code' : 'What is your name?';
+  const title = step === 'choose' ? 'Sign in or create an account' : step === 'phone' ? (ticket ? 'Add your phone number' : 'Sign in with your phone') : step === 'code' ? 'Enter the code' : 'What is your name?';
+  const back: Step | null = step === 'name' ? 'code' : step === 'code' ? 'phone' : step === 'phone' && google && !ticket ? 'choose' : null;
 
   return (
     <div class="fixed inset-0 z-[70] flex items-end justify-center bg-zinc-950/40 sm:items-center" onClick={close}>
@@ -175,8 +193,8 @@ export default function SignIn({ google }: { google: GoogleConfig | null }) {
         class="w-full max-w-md animate-slide-up rounded-t-3xl bg-white p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-xl sm:animate-fade-in sm:rounded-3xl sm:p-6"
       >
         <div class="flex items-center gap-2">
-          {step !== 'phone' && (
-            <button type="button" onClick={() => (setStep(step === 'name' ? 'code' : 'phone'), setError(null))} aria-label="Back" class="-ml-1.5 rounded-full p-1.5 text-zinc-500 hover:bg-zinc-100">
+          {back && (
+            <button type="button" onClick={() => (setStep(back), setError(null))} aria-label="Back" class="-ml-1.5 rounded-full p-1.5 text-zinc-500 hover:bg-zinc-100">
               <ArrowLeft class="size-5" />
             </button>
           )}
@@ -185,6 +203,33 @@ export default function SignIn({ google }: { google: GoogleConfig | null }) {
             <X class="size-5" />
           </button>
         </div>
+
+        {step === 'choose' && (
+          <div>
+            <p class="mt-1 text-sm text-zinc-500">{open.reason ?? 'See your orders, and order faster next time.'}</p>
+            <button
+              type="button"
+              onClick={withGoogle}
+              disabled={!!busy}
+              class="relative mt-5 flex h-13 w-full items-center justify-center gap-3 rounded-full border-2 border-brand-600 bg-white font-semibold text-zinc-900 hover:bg-brand-50 disabled:opacity-50"
+            >
+              {busy === 'google' ? <Loader2 class="size-5 animate-spin" /> : <GoogleG />}
+              Continue with Google
+              <span class="absolute -top-2.5 right-5 rounded-full bg-brand-700 px-2 py-0.5 text-[10px] font-bold tracking-wide text-white uppercase">Recommended</span>
+            </button>
+            <p class="mt-1.5 text-center text-xs text-zinc-500">One tap, no code to type.</p>
+            <div class="my-4 flex items-center gap-3 text-xs text-zinc-400">
+              <span class="h-px flex-1 bg-zinc-200" />
+              or
+              <span class="h-px flex-1 bg-zinc-200" />
+            </div>
+            <button type="button" onClick={() => (setStep('phone'), setError(null))} disabled={!!busy} class="flex h-12 w-full items-center justify-center gap-2 rounded-full border border-zinc-300 bg-white font-semibold text-zinc-800 hover:bg-zinc-50 disabled:opacity-50">
+              <Phone class="size-4" /> Sign in with phone number
+            </button>
+            {error && <p class="mt-3 text-sm text-red-600">{error}</p>}
+            <p class="mt-4 text-center text-xs text-zinc-500">No password needed. New here? Your account is made when you sign in.</p>
+          </div>
+        )}
 
         {step === 'phone' && (
           <form onSubmit={sendCode} noValidate>
@@ -196,49 +241,51 @@ export default function SignIn({ google }: { google: GoogleConfig | null }) {
                 </p>
               </div>
             ) : (
-              <p class="mt-1 text-sm text-zinc-500">{open.reason ?? 'See your orders, and order faster next time.'}</p>
+              <p class="mt-1 text-sm text-zinc-500">We send a 6-digit code to your mobile by SMS.</p>
             )}
-            <label class="mt-4 block text-sm font-medium text-zinc-800">
-              Phone number
-              <input
-                ref={field}
-                value={phone}
-                onInput={(e) => (setPhone(e.currentTarget.value), setError(null))}
-                type="tel"
-                inputMode="tel"
-                autocomplete="tel"
-                placeholder="01XXXXXXXXX"
-                maxLength={20}
-                class={input}
-                aria-invalid={!!error}
-              />
+            <label for="signin-phone" class="mt-4 block text-sm font-medium text-zinc-800">
+              Mobile number
             </label>
+            <div
+              class={cn(
+                'mt-1 flex h-12 overflow-hidden rounded-xl border bg-white focus-within:border-brand-500 focus-within:ring-3 focus-within:ring-brand-100',
+                error ? 'border-red-500' : 'border-zinc-300',
+              )}
+            >
+              <span class="flex shrink-0 items-center gap-2 border-r border-zinc-200 bg-zinc-50 px-3 text-[15px] font-medium text-zinc-700">
+                <BdFlag /> +880
+              </span>
+              <input
+                id="signin-phone"
+                ref={field}
+                value={spaced(phone)}
+                onInput={(e) => {
+                  const d = localDigits(e.currentTarget.value);
+                  setPhone(d);
+                  setError(null);
+                  e.currentTarget.value = spaced(d);
+                }}
+                type="tel"
+                inputMode="numeric"
+                autocomplete="tel-national"
+                placeholder="1XXX XXXXXX"
+                maxLength={16}
+                aria-invalid={!!error}
+                class="min-w-0 flex-1 px-3 text-[16px] tracking-wide outline-none"
+              />
+            </div>
             {error && <p class="mt-2 text-sm text-red-600">{error}</p>}
             <button type="submit" disabled={!!busy} class="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-brand-700 font-semibold text-white hover:bg-brand-800 disabled:opacity-50">
-              {busy === 'code' ? <Loader2 class="size-5 animate-spin" /> : <Phone class="size-4" />}
+              {busy === 'code' && <Loader2 class="size-5 animate-spin" />}
               Send me a code
             </button>
-            {google && !ticket && (
-              <>
-                <div class="my-4 flex items-center gap-3 text-xs text-zinc-400">
-                  <span class="h-px flex-1 bg-zinc-200" />
-                  or
-                  <span class="h-px flex-1 bg-zinc-200" />
-                </div>
-                <button type="button" onClick={withGoogle} disabled={!!busy} class="flex h-12 w-full items-center justify-center gap-3 rounded-full border border-zinc-300 bg-white font-semibold text-zinc-800 hover:bg-zinc-50 disabled:opacity-50">
-                  {busy === 'google' ? <Loader2 class="size-5 animate-spin" /> : <GoogleG />}
-                  Continue with Google
-                </button>
-              </>
-            )}
-            <p class="mt-4 text-center text-xs text-zinc-500">No password needed. New here? Your account is made when you sign in.</p>
           </form>
         )}
 
         {step === 'code' && (
           <form onSubmit={(e) => verify(code, e)} noValidate>
             <p class="mt-1 text-sm text-zinc-500">
-              We sent a 6-digit code to <span class="font-semibold text-zinc-800">{phone}</span>.
+              We sent a 6-digit code to <span class="font-semibold text-zinc-800">+880 {spaced(phone)}</span>.
             </p>
             {devCode && (
               <button type="button" onClick={() => (setCode(devCode), verify(devCode))} class="mt-3 w-full rounded-xl bg-marigold-100 px-3 py-2 text-left text-sm text-zinc-800">

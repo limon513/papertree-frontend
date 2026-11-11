@@ -219,8 +219,10 @@ export interface PlacedOrder {
   districtName: string;
   deliveryTime: string | null;
   paymentMethod: string;
-  items: { name: string; variantLabel: string | null; quantity: number; unitPrice: number; lineTotal: number; image: Img | null }[];
+  /** variantId: for "Order again" (null when the product was deleted). */
+  items: { variantId?: number | null; name: string; variantLabel: string | null; quantity: number; unitPrice: number; lineTotal: number; image: Img | null }[];
   subtotal: number;
+  discount?: number;
   deliveryFee: number;
   total: number;
 }

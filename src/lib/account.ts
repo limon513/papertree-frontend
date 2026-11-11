@@ -1,5 +1,7 @@
 import { signal } from '@preact/signals';
 import { useEffect, useState } from 'preact/hooks';
+import { cart, loadSaved } from './cart';
+import type { CartCheck } from './types';
 import { API_PUBLIC_URL } from './utils';
 
 /**
@@ -7,6 +9,21 @@ import { API_PUBLIC_URL } from './utils';
  * only mirrors who it is. A small copy is kept on this device so the header shows the right picture at
  * once, then it is checked with the shop.
  */
+export interface SavedAddress {
+  id: number;
+  /** "Home", "Office". */
+  label: string | null;
+  /** Who receives it, when not the shopper. */
+  recipientName: string | null;
+  recipientPhone: string | null;
+  districtId: string;
+  districtName: string;
+  areaId: string | null;
+  areaName: string | null;
+  address: string;
+  isDefault: boolean;
+}
+
 export interface Me {
   id: number;
   name: string;
@@ -17,6 +34,8 @@ export interface Me {
   business: boolean;
   /** The address to fill in at checkout. */
   address: { districtId: string; areaId: string | null; address: string } | null;
+  /** Default first, then the latest used. */
+  addresses: SavedAddress[];
 }
 
 /** undefined: not known yet. null: signed out. */
@@ -97,3 +116,47 @@ export const openSignIn = (options: { then?: string; reason?: string } = {}) => 
 
 /** "Nadia Islam" -> "N". */
 export const initialOf = (name: string) => name.trim().charAt(0).toUpperCase() || '?';
+
+/** Sends a change to the account; the shop answers with the updated account (or an error). */
+export async function changeAccount(path: string, body?: unknown, method: 'POST' | 'PUT' | 'PATCH' | 'DELETE' = 'POST') {
+  const res = await fetch(`${API_PUBLIC_URL}/v1/store${path}`, {
+    method,
+    credentials: 'include',
+    headers: body === undefined ? undefined : { 'content-type': 'application/json' },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  const data = (await res.json().catch(() => null)) as { customer?: Me; error?: { message?: string; fields?: Record<string, string> } } | null;
+  if (res.ok && data?.customer) {
+    remember(data.customer);
+    return { ok: true as const, customer: data.customer };
+  }
+  if (res.status === 401) remember(null);
+  return { ok: false as const, message: data?.error?.message ?? 'That did not work. Please try again.', fields: data?.error?.fields ?? {} };
+}
+
+/**
+ * "Order again": the order's items go into the cart at today's prices (what is still for sale, up to
+ * the stock), only those are ticked, and checkout opens. Says what could not be added.
+ */
+export async function orderAgain(items: { variantId: number | null; quantity: number }[]) {
+  const wanted = items.filter((i): i is { variantId: number; quantity: number } => i.variantId !== null);
+  if (!wanted.length) return { added: 0, missing: items.length };
+  const res = await fetch(`${API_PUBLIC_URL}/v1/store/cart`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ items: wanted }),
+  });
+  if (!res.ok) throw new Error(String(res.status));
+  const check = (await res.json()) as CartCheck;
+  // The saved cart must be in place first, or it would be replaced by these items.
+  loadSaved();
+  const ok = check.lines.filter((l) => l.problem !== 'gone' && l.problem !== 'out_of_stock' && l.price !== undefined && l.quantity > 0);
+  for (const l of ok) {
+    cart.put(
+      { variantId: l.variantId, productId: l.productId!, slug: l.slug!, name: l.name!, variantLabel: l.variantLabel ?? null, image: l.image ?? null, price: l.price!, regularPrice: l.regularPrice ?? null, maxQuantity: l.maxQuantity ?? null },
+      l.quantity,
+    );
+  }
+  if (ok.length) cart.only(ok.map((l) => l.variantId));
+  return { added: ok.length, missing: items.length - ok.length };
+}
