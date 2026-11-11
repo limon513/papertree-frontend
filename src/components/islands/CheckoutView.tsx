@@ -3,6 +3,7 @@ import { AlertCircle, ArrowLeft, Banknote, Check, Info, Lock, Minus, Plus, Shopp
 import { cart, selectedOf, subtotalOf, useCart } from '@/lib/cart';
 import { useCartCheck } from '@/lib/cart-check';
 import { saveContact, savedContact } from '@/lib/contact';
+import { openSignIn, useMe } from '@/lib/account';
 import { areasOf, loadPlaces } from '@/lib/places';
 import type { Places } from '@/lib/types';
 import { API_PUBLIC_URL, cn, imageAt, money } from '@/lib/utils';
@@ -53,6 +54,18 @@ export default function CheckoutView() {
     loadPlaces().then(setPlaces, () => setPlaces(null));
     setReady(true);
   }, []);
+
+  // Signed in: their details fill the empty boxes (what they typed stays).
+  const m = useMe();
+  useEffect(() => {
+    if (!m) return;
+    setForm((f) => ({ ...f, name: f.name || m.name, phone: f.phone || m.phone, email: f.email || m.email || '', address: f.address || m.address?.address || '' }));
+    if (m.email) setShowEmail(true);
+  }, [m?.id]);
+  useEffect(() => {
+    if (!m?.address || !places || s.deliverTo) return;
+    setPlace(m.address.districtId, m.address.areaId ?? '');
+  }, [m?.id, !!places]);
 
   const districtId = s.deliverTo?.districtId ?? '';
   const areaId = s.deliverTo?.areaId ?? '';
@@ -124,6 +137,8 @@ export default function CheckoutView() {
     try {
       const res = await fetch(`${API_PUBLIC_URL}/v1/store/orders`, {
         method: 'POST',
+        // The sign-in cookie: a signed-in shopper's order goes to their account.
+        credentials: 'include',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           name: form.name.trim(),
@@ -177,7 +192,15 @@ export default function CheckoutView() {
       <div class="space-y-5">
         {/* Who */}
         <section class="rounded-2xl bg-white p-4 ring-1 ring-zinc-200 sm:p-5">
-          <h2 class="font-display text-lg font-bold">Your details</h2>
+          <div class="flex flex-wrap items-baseline justify-between gap-x-3">
+            <h2 class="font-display text-lg font-bold">Your details</h2>
+            {m === null && (
+              <button type="button" onClick={() => openSignIn({ reason: 'Sign in and we fill in your details.' })} class="text-sm font-semibold text-brand-700 hover:underline">
+                Ordered before? Sign in
+              </button>
+            )}
+            {m && <span class="text-sm text-zinc-500">Signed in as {m.name.split(' ')[0]}</span>}
+          </div>
           <div class="mt-3 grid gap-4 sm:grid-cols-2">
             <label class={label}>
               Name

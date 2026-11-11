@@ -1,7 +1,7 @@
 ---
 import '@/styles/global.css';
 import displayFont from '@fontsource/bricolage-grotesque/files/bricolage-grotesque-latin-700-normal.woff2?url';
-import { Home, LayoutGrid, Percent, Phone, Search } from 'lucide-preact';
+import { Home, LayoutGrid, Phone, Search } from 'lucide-preact';
 import { getCatalog } from '@/lib/api';
 import type { Img } from '@/lib/types';
 import { imageAt, links, SITE_URL, srcSet } from '@/lib/utils';
@@ -13,6 +13,8 @@ import { HeaderCart, TabCart } from '@/components/islands/CartButtons';
 import { DeliverToButton, DeliverToDialog } from '@/components/islands/DeliverTo';
 import { AddedNotice, CartDrawer } from '@/components/islands/CartPanels';
 import QuickBuy from '@/components/islands/QuickBuy';
+import SignIn from '@/components/islands/SignIn';
+import { HeaderAccount, TabAccount } from '@/components/islands/AccountButtons';
 
 interface Props {
   /** Page title; " | PaperTree" is added unless `fullTitle` is set. */
@@ -101,6 +103,7 @@ const imageOrigin = store.logo ? new URL(imageAt(store.logo, 160)).origin : null
               </a>
             )
           }
+          <HeaderAccount client:idle className="hidden lg:flex" />
           <HeaderCart client:idle className="hidden lg:flex" />
         </div>
       </div>
@@ -157,7 +160,6 @@ const imageOrigin = store.logo ? new URL(imageAt(store.logo, 160)).origin : null
             { href: '/', label: 'Home', Icon: Home, active: path === '/' },
             { href: '/categories/', label: 'Categories', Icon: LayoutGrid, active: path.startsWith('/categories') || path.startsWith('/product-category') },
             { href: '/search/', label: 'Search', Icon: Search, active: path.startsWith('/search') },
-            { href: '/deals/', label: 'Deals', Icon: Percent, active: path.startsWith('/deals') },
           ].map(({ href, label, Icon, active }) => (
             <li>
               <a
@@ -171,6 +173,7 @@ const imageOrigin = store.logo ? new URL(imageAt(store.logo, 160)).origin : null
             </li>
           ))
         }
+        <li><TabAccount client:idle active={path.startsWith('/account')} /></li>
         <li><TabCart client:idle /></li>
       </ul>
     </nav>
@@ -179,5 +182,6 @@ const imageOrigin = store.logo ? new URL(imageAt(store.logo, 160)).origin : null
     <DeliverToDialog client:idle />
     <AddedNotice client:idle />
     <QuickBuy client:idle />
+    <SignIn client:idle google={catalog.google ?? null} />
   </body>
 </html>

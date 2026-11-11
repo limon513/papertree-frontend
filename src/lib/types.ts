@@ -38,10 +38,20 @@ export interface StoreInfo {
   social: { facebook: string | null; instagram: string | null; youtube: string | null; tiktok: string | null };
 }
 
+/** Firebase web settings for "Continue with Google" (public by design). */
+export interface GoogleConfig {
+  apiKey: string;
+  authDomain: string;
+  projectId: string;
+  appId: string;
+}
+
 export interface Catalog {
   store: StoreInfo;
   categories: CategoryNode[];
   brands: BrandInfo[];
+  /** null: Google sign-in is switched off. */
+  google: GoogleConfig | null;
 }
 
 export interface ProductCard {
