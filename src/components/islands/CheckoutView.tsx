@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { AlertCircle, ArrowLeft, Banknote, Check, Info, Lock, Minus, Plus, ShoppingBag } from 'lucide-preact';
 import { cart, selectedOf, subtotalOf, useCart } from '@/lib/cart';
 import { useCartCheck } from '@/lib/cart-check';
+import { BulkNote, LineMoney, lineOf } from './BulkNote';
 import { saveContact, savedContact } from '@/lib/contact';
 import { openSignIn, useMe, type SavedAddress } from '@/lib/account';
 import { areasOf, loadPlaces } from '@/lib/places';
@@ -374,6 +375,7 @@ export default function CheckoutView() {
               <span class="min-w-0 flex-1 text-sm">
                 <span class="line-clamp-2 text-zinc-800">{i.name}</span>
                 {i.variantLabel && <span class="block text-xs text-zinc-500">{i.variantLabel}</span>}
+                <BulkNote line={lineOf(check, i.variantId)} quantity={i.quantity} />
                 {buy && (
                   // Buy now: change how many right here.
                   <span class="mt-1.5 flex h-8 w-fit items-center rounded-full ring-1 ring-zinc-300">
@@ -393,15 +395,21 @@ export default function CheckoutView() {
                   </span>
                 )}
               </span>
-              <span class="text-sm font-medium tabular-nums">{money(i.price * i.quantity)}</span>
+              <LineMoney price={i.price} quantity={i.quantity} line={lineOf(check, i.variantId)} className="text-sm font-medium" />
             </li>
           ))}
         </ul>
         <dl class="mt-3 space-y-2 border-t border-zinc-100 pt-3 text-sm">
           <div class="flex justify-between">
             <dt class="text-zinc-600">Items</dt>
-            <dd class="font-medium tabular-nums">{money(subtotal)}</dd>
+            <dd class="font-medium tabular-nums">{money(subtotal + (check?.bulkSavings ?? 0))}</dd>
           </div>
+          {(check?.bulkSavings ?? 0) > 0 && (
+            <div class="flex justify-between text-brand-700">
+              <dt>Bulk discount</dt>
+              <dd class="font-medium tabular-nums">−{money(check!.bulkSavings!)}</dd>
+            </div>
+          )}
           <div class="flex justify-between">
             <dt class="text-zinc-600">
               Delivery{check?.delivery?.deliveryTime && s.deliverTo ? <span class="text-zinc-400"> · {check.delivery.deliveryTime}</span> : null}

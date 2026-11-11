@@ -2,6 +2,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { ArrowRight, Info, MapPin, Minus, Plus, ShieldCheck, ShoppingBag, Trash2, Truck, Wallet, X } from 'lucide-preact';
 import { cart, panel, selectedOf, subtotalOf, useCart } from '@/lib/cart';
 import { useCartCheck } from '@/lib/cart-check';
+import { BulkNote, LineMoney, lineOf } from './BulkNote';
 import { cn, imageAt, links, money } from '@/lib/utils';
 
 /**
@@ -60,6 +61,7 @@ export default function CartView() {
   const pickedCount = picked.reduce((n, i) => n + i.quantity, 0);
   const allPicked = picked.length === items.length;
   const subtotal = picked.length ? (check?.subtotal ?? subtotalOf({ ...s, items: picked })) : 0;
+  const bulkSavings = picked.length ? (check?.bulkSavings ?? 0) : 0;
   const savings = picked.reduce((sum, i) => sum + (i.regularPrice && i.regularPrice > i.price ? (i.regularPrice - i.price) * i.quantity : 0), 0);
   const d = picked.length ? (check?.delivery ?? null) : null;
   const fee = deliverTo && d ? d.fee : null;
@@ -147,8 +149,9 @@ export default function CartView() {
                       </button>
                     </div>
                     {atMax && <span class="text-xs text-marigold-700">Only {item.maxQuantity} available</span>}
-                    <span class="font-semibold text-zinc-900 tabular-nums">{money(item.price * item.quantity)}</span>
+                    <LineMoney price={item.price} quantity={item.quantity} line={lineOf(check, item.variantId)} className="font-semibold text-zinc-900" />
                   </div>
+                  <BulkNote line={lineOf(check, item.variantId)} quantity={item.quantity} className="mt-1.5 text-right" />
                 </div>
               </li>
             );
@@ -202,8 +205,14 @@ export default function CartView() {
             <dt class="text-zinc-600">
               Items ({pickedCount})
             </dt>
-            <dd class="font-medium tabular-nums">{money(subtotal)}</dd>
+            <dd class="font-medium tabular-nums">{money(subtotal + bulkSavings)}</dd>
           </div>
+          {bulkSavings > 0 && (
+            <div class="flex justify-between text-brand-700">
+              <dt>Bulk discount</dt>
+              <dd class="font-medium tabular-nums">−{money(bulkSavings)}</dd>
+            </div>
+          )}
           {savings > 0 && (
             <div class="flex justify-between text-brand-700">
               <dt>You save</dt>
