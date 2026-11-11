@@ -3,7 +3,7 @@ import { AlertCircle, ArrowLeft, Banknote, Check, Info, Lock, Minus, Plus, Shopp
 import { cart, selectedOf, subtotalOf, useCart } from '@/lib/cart';
 import { useCartCheck } from '@/lib/cart-check';
 import { saveContact, savedContact } from '@/lib/contact';
-import { openSignIn, useMe } from '@/lib/account';
+import { openSignIn, useMe, type SavedAddress } from '@/lib/account';
 import { areasOf, loadPlaces } from '@/lib/places';
 import type { Places } from '@/lib/types';
 import { API_PUBLIC_URL, cn, imageAt, money } from '@/lib/utils';
@@ -32,6 +32,9 @@ export default function CheckoutView() {
   const [errors, setErrors] = useState<Fields>({});
   const [problem, setProblem] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  // "Place order" was tapped while the delivery charge was being worked out: it is placed once ready.
+  const [waiting, setWaiting] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
   const requestId = useRef(newRequestId());
   // "Buy now" (?buy=20&qty=2): just that item, the cart is left as it is. Otherwise the ticked cart items.
   const [buy, setBuy] = useState<{ variantId: number; quantity: number } | null>(null);
@@ -59,13 +62,29 @@ export default function CheckoutView() {
   const m = useMe();
   useEffect(() => {
     if (!m) return;
-    setForm((f) => ({ ...f, name: f.name || m.name, phone: f.phone || m.phone, email: f.email || m.email || '', address: f.address || m.address?.address || '' }));
+    const first = m.addresses[0];
+    setForm((f) => ({ ...f, name: f.name || first?.recipientName || m.name, phone: f.phone || first?.recipientPhone || m.phone, email: f.email || m.email || '', address: f.address || m.address?.address || '' }));
     if (m.email) setShowEmail(true);
   }, [m?.id]);
   useEffect(() => {
     if (!m?.address || !places || s.deliverTo) return;
     setPlace(m.address.districtId, m.address.areaId ?? '');
   }, [m?.id, !!places]);
+
+  const pricedNow = !!check && !!s.deliverTo && !!check.delivery && check.delivery.fee !== null && !checking;
+  useEffect(() => {
+    if (!waiting || !pricedNow) return;
+    setWaiting(false);
+    formRef.current?.requestSubmit();
+  }, [waiting, pricedNow]);
+  useEffect(() => {
+    if (!waiting) return;
+    const t = setTimeout(() => {
+      setWaiting(false);
+      setProblem('We could not work out the delivery charge. Check your internet and tap “Place order” again.');
+    }, 8000);
+    return () => clearTimeout(t);
+  }, [waiting]);
 
   const districtId = s.deliverTo?.districtId ?? '';
   const areaId = s.deliverTo?.areaId ?? '';
@@ -75,6 +94,12 @@ export default function CheckoutView() {
     if (!district) return cart.setDeliverTo(null);
     const area = areasOf(places, nextDistrict).find((a) => a.id === nextArea);
     cart.setDeliverTo({ districtId: nextDistrict, areaId: area?.id ?? null, label: area ? `${area.name}, ${district.name}` : district.name });
+  };
+  /** A saved address, in one tap: the place, and who receives it. */
+  const useAddress = (a: SavedAddress) => {
+    setPlace(a.districtId, a.areaId ?? '');
+    setForm((f) => ({ ...f, address: a.address, name: a.recipientName || m?.name || f.name, phone: a.recipientPhone || m?.phone || f.phone }));
+    setErrors((x) => ({ ...x, districtId: undefined, areaId: undefined, address: undefined, name: undefined, phone: undefined }));
   };
   const set = (key: keyof typeof form) => (e: Event) => {
     setForm((f) => ({ ...f, [key]: (e.currentTarget as HTMLInputElement).value }));
@@ -129,7 +154,8 @@ export default function CheckoutView() {
       return;
     }
     if (!priced) {
-      setProblem('One moment, we are working out the delivery charge. Tap “Place order” again in a second.');
+      // No second tap needed: it goes as soon as the charge is known.
+      setWaiting(true);
       return;
     }
 
@@ -188,7 +214,7 @@ export default function CheckoutView() {
   const err = (key: keyof Fields) => errors[key] && <p class="mt-1 text-sm text-red-600">{errors[key]}</p>;
 
   return (
-    <form onSubmit={place} noValidate class="mt-5 grid gap-6 lg:grid-cols-[1fr_400px] lg:items-start">
+    <form ref={formRef} onSubmit={place} noValidate class="mt-5 grid gap-6 lg:grid-cols-[1fr_400px] lg:items-start">
       <div class="space-y-5">
         {/* Who */}
         <section class="rounded-2xl bg-white p-4 ring-1 ring-zinc-200 sm:p-5">
@@ -230,6 +256,26 @@ export default function CheckoutView() {
         {/* Where */}
         <section class="rounded-2xl bg-white p-4 ring-1 ring-zinc-200 sm:p-5">
           <h2 class="font-display text-lg font-bold">Delivery address</h2>
+          {m && m.addresses.length > 1 && (
+            <div class="mt-3 flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Your saved addresses">
+              {m.addresses.map((a) => {
+                const on = districtId === a.districtId && (areaId || null) === a.areaId && form.address.trim() === a.address;
+                return (
+                  <button
+                    key={a.id}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => useAddress(a)}
+                    class="w-44 shrink-0 rounded-xl p-2.5 text-left ring-1 ring-zinc-300 hover:ring-brand-400 aria-pressed:bg-brand-50 aria-pressed:ring-2 aria-pressed:ring-brand-600"
+                  >
+                    <span class="block text-sm font-semibold text-zinc-900">{a.label || a.areaName || a.districtName}</span>
+                    <span class="block truncate text-xs text-zinc-600">{a.address}</span>
+                    <span class="block truncate text-xs text-zinc-500">{[a.areaName, a.districtName].filter(Boolean).join(', ')}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
           <div class="mt-3 grid gap-4 sm:grid-cols-2">
             <label class={label}>
               District
@@ -384,7 +430,7 @@ export default function CheckoutView() {
             class="flex h-13 w-full items-center justify-between gap-3 rounded-full bg-brand-700 px-5 py-3.5 font-semibold text-white hover:bg-brand-800 disabled:opacity-70"
           >
             <span class="flex items-center gap-2">
-              {sending ? 'Placing your order…' : (
+              {sending || waiting ? 'Placing your order…' : (
                 <>
                   <Check class="size-5" /> Place order
                 </>
