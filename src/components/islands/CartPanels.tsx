@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import { Check, Minus, Plus, ShoppingBag, Trash2, Truck, X } from 'lucide-preact';
+import { BulkNote, LineMoney, lineOf } from './BulkNote';
 import { cart, countOf, lastAdded, panel, selectedOf, subtotalOf, useCart } from '@/lib/cart';
 import { useCartCheck } from '@/lib/cart-check';
 import { cn, imageAt, links, money } from '@/lib/utils';
@@ -124,13 +125,17 @@ export function CartDrawer() {
                           <Plus class="size-3.5" />
                         </button>
                       </div>
-                      <span class="text-sm font-semibold tabular-nums">{money(item.price * item.quantity)}</span>
+                      <LineMoney price={item.price} quantity={item.quantity} line={lineOf(check, item.variantId)} className="text-sm font-semibold" />
                     </div>
+                    <BulkNote line={lineOf(check, item.variantId)} quantity={item.quantity} className="mt-1" />
                   </div>
                 </li>
               ))}
             </ul>
             <div class="border-t border-zinc-100 px-5 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+              {picked.length > 0 && (check?.bulkSavings ?? 0) > 0 && (
+                <p class="mb-2 text-center text-sm font-medium text-brand-700">Bulk discount saves you {money(check!.bulkSavings!)}</p>
+              )}
               {picked.length ? (
                 <a href="/checkout/" class="flex h-12 items-center justify-between rounded-full bg-brand-700 px-5 font-semibold text-white hover:bg-brand-800">
                   <span>Checkout{allPicked ? '' : ` (${pickedCount})`}</span>

@@ -190,13 +190,19 @@ export interface CartCheckLine {
   price?: number;
   regularPrice?: number | null;
   maxQuantity?: number | null;
+  /** After any bulk discount. */
   lineTotal?: number;
+  /** Bulk discount on this line, and the next step ("add 3 more for 10% off"). */
+  bulk?: { percent: number; discount: number; next: { more: number; percent: number } | null };
 }
 
 export interface CartCheck {
   lines: CartCheckLine[];
   itemCount: number;
+  /** After bulk discounts. */
   subtotal: number;
+  /** What bulk discounts took off. */
+  bulkSavings?: number;
   weightKg: number;
   delivery: {
     zone: string | null;
@@ -220,9 +226,11 @@ export interface PlacedOrder {
   deliveryTime: string | null;
   paymentMethod: string;
   /** variantId: for "Order again" (null when the product was deleted). */
-  items: { variantId?: number | null; name: string; variantLabel: string | null; quantity: number; unitPrice: number; lineTotal: number; image: Img | null }[];
+  items: { variantId?: number | null; bulkPercent?: number | null; name: string; variantLabel: string | null; quantity: number; unitPrice: number; lineTotal: number; image: Img | null }[];
   subtotal: number;
   discount?: number;
+  /** Saved by bulk discounts (already in the item prices). */
+  bulkDiscount?: number;
   deliveryFee: number;
   total: number;
 }

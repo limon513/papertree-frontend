@@ -570,6 +570,7 @@ function OrderView({ number, back }: { number: number; back: () => void }) {
                 <span class="text-zinc-500">
                   {i.variantLabel && <>{i.variantLabel} · </>}
                   {i.quantity} × {money(i.unitPrice)}
+                  {i.bulkPercent ? <span class="text-brand-700"> · {i.bulkPercent}% bulk discount</span> : null}
                 </span>
               </span>
               <span class="text-sm font-medium tabular-nums">{money(i.lineTotal)}</span>
@@ -578,6 +579,7 @@ function OrderView({ number, back }: { number: number; back: () => void }) {
         </ul>
         <dl class="space-y-1.5 border-t border-zinc-100 px-5 py-4 text-sm">
           <div class="flex justify-between"><dt class="text-zinc-600">Items</dt><dd class="tabular-nums">{money(order.subtotal)}</dd></div>
+          {order.bulkDiscount ? <p class="text-right text-xs text-brand-700">You saved {money(order.bulkDiscount)} with bulk discounts</p> : null}
           {(order.discount ?? 0) > 0 && <div class="flex justify-between"><dt class="text-zinc-600">Discount</dt><dd class="tabular-nums">−{money(order.discount ?? 0)}</dd></div>}
           <div class="flex justify-between"><dt class="text-zinc-600">Delivery</dt><dd class="tabular-nums">{order.deliveryFee === 0 ? 'Free' : money(order.deliveryFee)}</dd></div>
           <div class="flex justify-between pt-1.5 text-base font-bold"><dt>Total{order.paymentMethod === 'cod' ? ' (cash on delivery)' : ''}</dt><dd class="tabular-nums">{money(order.total)}</dd></div>
