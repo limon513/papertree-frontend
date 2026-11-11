@@ -21,6 +21,7 @@
     "astro": "7.4.2",
     "clsx": "2.1.1",
     "compression": "1.8.2",
+    "firebase": "13.1.0",
     "lucide-preact": "1.61.0",
     "preact": "11.0.1",
     "tailwind-merge": "3.7.0",
