@@ -6,7 +6,7 @@ import { links } from '@/lib/utils';
 interface Props {
   catalog: Catalog;
 }
-const { store, categories } = Astro.props.catalog;
+const { store, categories, pages } = Astro.props.catalog;
 const SOCIAL_LABELS = { facebook: 'Facebook', instagram: 'Instagram', youtube: 'YouTube', tiktok: 'TikTok' } as const;
 const social = Object.entries(store.social).filter((e): e is [keyof typeof SOCIAL_LABELS, string] => !!e[1]);
 ---
@@ -43,6 +43,7 @@ const social = Object.entries(store.social).filter((e): e is [keyof typeof SOCIA
         <li><a href="/new/" class="hover:text-white">New arrivals</a></li>
         <li><a href="/brands/" class="hover:text-white">All brands</a></li>
         <li><a href="/shop/" class="hover:text-white">All products</a></li>
+        {(pages ?? []).map((p) => <li><a href={`/${p.slug}/`} class="hover:text-white">{p.title}</a></li>)}
       </ul>
     </div>
     <div>
