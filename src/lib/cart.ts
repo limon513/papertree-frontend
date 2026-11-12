@@ -31,17 +31,19 @@ interface State {
   deliverTo: DeliverTo | null;
   /** Items the shopper unticked: they stay in the cart but are not ordered now. */
   skip: number[];
+  /** A coupon code to try (the shop checks it on every cart check and again on the order). */
+  coupon: string | null;
 }
 
 const KEY = 'papertree-cart-v1';
-const EMPTY: State = { items: [], deliverTo: null, skip: [] };
+const EMPTY: State = { items: [], deliverTo: null, skip: [], coupon: null };
 
 function read(): State {
   if (typeof window === 'undefined') return EMPTY;
   try {
     const saved = JSON.parse(localStorage.getItem(KEY) ?? 'null') as State | null;
     return saved && Array.isArray(saved.items)
-      ? { items: saved.items, deliverTo: saved.deliverTo ?? null, skip: Array.isArray(saved.skip) ? saved.skip : [] }
+      ? { items: saved.items, deliverTo: saved.deliverTo ?? null, skip: Array.isArray(saved.skip) ? saved.skip : [], coupon: typeof saved.coupon === 'string' ? saved.coupon : null }
       : EMPTY;
   } catch {
     return EMPTY;
@@ -64,6 +66,18 @@ export function loadSaved() {
   if (loaded || typeof window === 'undefined') return;
   loaded = true;
   cartState.value = read();
+  // A shared link with ?coupon=SCHOOL10: the code is kept for checkout, and the address is tidied.
+  const url = new URL(location.href);
+  const linked = url.searchParams.get('coupon');
+  if (linked !== null) {
+    const code = cleanCoupon(linked);
+    if (code) {
+      set({ ...cartState.value, coupon: code });
+      couponFromLink.value = code;
+    }
+    url.searchParams.delete('coupon');
+    history.replaceState(history.state, '', url.pathname + url.search + url.hash);
+  }
   // Another tab changed the cart.
   window.addEventListener('storage', (e) => {
     if (e.key === KEY) cartState.value = read();
@@ -170,6 +184,10 @@ export const cart = {
     const s = cartState.value;
     set({ ...s, skip: selected ? [] : s.items.map((i) => i.variantId) });
   },
+  /** Try a coupon code (null takes it off). */
+  setCoupon(code: string | null) {
+    set({ ...cartState.value, coupon: code ? cleanCoupon(code) || null : null });
+  },
   setDeliverTo(deliverTo: DeliverTo | null) {
     set({ ...cartState.value, deliverTo });
   },
@@ -177,6 +195,15 @@ export const cart = {
 
 export const quantityOf = (variantId: number | null) =>
   variantId === null ? 0 : (cartState.value.items.find((i) => i.variantId === variantId)?.quantity ?? 0);
+
+/** "school 10" -> "SCHOOL10"; anything else than letters and numbers -> empty. */
+export const cleanCoupon = (code: string) => {
+  const c = code.replace(/\s+/g, '').toUpperCase();
+  return /^[A-Z0-9]{3,30}$/.test(c) ? c : '';
+};
+
+/** A coupon that came with a link (for the "coupon added" note). */
+export const couponFromLink = signal<string | null>(null);
 
 /** Which panel is open. */
 export const panel = signal<'cart' | 'deliver-to' | null>(null);

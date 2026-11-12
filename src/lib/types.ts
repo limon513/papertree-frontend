@@ -203,6 +203,8 @@ export interface CartCheck {
   subtotal: number;
   /** What bulk discounts took off. */
   bulkSavings?: number;
+  /** The coupon tried (null: none). The total is subtotal − itemsOff + (delivery − deliveryOff). */
+  coupon?: CartCoupon | null;
   weightKg: number;
   delivery: {
     zone: string | null;
@@ -211,6 +213,20 @@ export interface CartCheck {
     freeAbove: number | null;
     toFree: number | null;
   } | null;
+}
+
+export interface CartCoupon {
+  code: string;
+  ok: boolean;
+  /** Why it gives nothing now ("Add ৳120 more to use this code"). */
+  message: string | null;
+  short: number | null;
+  itemsOff: number;
+  deliveryOff: number;
+  /** "10% off", "৳100 off", "Free delivery". */
+  label: string | null;
+  /** Once-per-customer and similar rules are checked when the order is placed. */
+  checkedAtOrder: boolean;
 }
 
 /** An order placed on the website, for its thank-you page. */
@@ -231,6 +247,8 @@ export interface PlacedOrder {
   discount?: number;
   /** Saved by bulk discounts (already in the item prices). */
   bulkDiscount?: number;
+  couponCode?: string | null;
+  couponDiscount?: number;
   deliveryFee: number;
   total: number;
 }
