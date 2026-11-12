@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import { Check, Minus, Plus, ShoppingBag, Trash2, Truck, X } from 'lucide-preact';
 import { BulkNote, LineMoney, lineOf } from './BulkNote';
+import { couponOf } from './CouponBox';
 import { cart, countOf, lastAdded, panel, selectedOf, subtotalOf, useCart } from '@/lib/cart';
 import { useCartCheck } from '@/lib/cart-check';
 import { cn, imageAt, links, money } from '@/lib/utils';
@@ -34,6 +35,7 @@ export function CartDrawer() {
   const fee = d?.fee ?? null;
   const pickedCount = picked.reduce((n, i) => n + i.quantity, 0);
   const subtotal = check?.subtotal ?? subtotalOf({ ...s, items: picked });
+  const cp = couponOf(check, s.coupon);
 
   return (
     <div class="fixed inset-0 z-50 animate-fade-in bg-zinc-950/40" onClick={close}>
@@ -133,13 +135,18 @@ export function CartDrawer() {
               ))}
             </ul>
             <div class="border-t border-zinc-100 px-5 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+              {picked.length > 0 && cp.ok && cp.itemsOff + cp.deliveryOff > 0 && (
+                <p class="mb-2 text-center text-sm font-medium text-brand-700">
+                  Coupon <span class="font-mono">{s.coupon}</span> takes off {money(cp.itemsOff + cp.deliveryOff)}
+                </p>
+              )}
               {picked.length > 0 && (check?.bulkSavings ?? 0) > 0 && (
                 <p class="mb-2 text-center text-sm font-medium text-brand-700">Bulk discount saves you {money(check!.bulkSavings!)}</p>
               )}
               {picked.length ? (
                 <a href="/checkout/" class="flex h-12 items-center justify-between rounded-full bg-brand-700 px-5 font-semibold text-white hover:bg-brand-800">
                   <span>Checkout{allPicked ? '' : ` (${pickedCount})`}</span>
-                  <span class="tabular-nums">{money(subtotal + (fee ?? 0))}</span>
+                  <span class="tabular-nums">{money(subtotal - cp.itemsOff + Math.max(0, (fee ?? 0) - cp.deliveryOff))}</span>
                 </a>
               ) : (
                 <span class="flex h-12 items-center justify-center rounded-full bg-zinc-200 px-5 text-sm font-semibold text-zinc-500">Tick the items to order</span>

@@ -27,7 +27,7 @@ export function useCartCheck(active: boolean, options: CheckOptions = {}) {
   const [checking, setChecking] = useState(false);
   // Bumped to check again now (checkout, after the shop said prices changed).
   const [round, setRound] = useState(0);
-  const key = JSON.stringify([sent.map((i) => [i.variantId, i.quantity]), deliverTo?.districtId, deliverTo?.areaId]);
+  const key = JSON.stringify([sent.map((i) => [i.variantId, i.quantity]), deliverTo?.districtId, deliverTo?.areaId, s.coupon]);
 
   useEffect(() => {
     if (!active || !sent.length) {
@@ -40,11 +40,14 @@ export function useCartCheck(active: boolean, options: CheckOptions = {}) {
       try {
         const res = await fetch(`${API_PUBLIC_URL}/v1/store/cart`, {
           method: 'POST',
+          // The sign-in lets the shop check "once per customer" coupons now, not only at the order.
+          credentials: 'include',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             items: sent.map((i) => ({ variantId: i.variantId, quantity: Math.min(i.quantity, 9999) })),
             districtId: deliverTo?.districtId ?? null,
             areaId: deliverTo?.areaId ?? null,
+            couponCode: s.coupon,
           }),
           signal: controller.signal,
         });
@@ -91,6 +94,7 @@ export function useCartCheck(active: boolean, options: CheckOptions = {}) {
 
   // An answer is only used for exactly the items asked about now (ticking another item must never
   // show the old total, even for a moment).
-  const current = check && check.lines.length === sent.length && sent.every((i) => check.lines.some((l) => l.variantId === i.variantId)) ? check : null;
+  const current =
+    check && check.lines.length === sent.length && sent.every((i) => check.lines.some((l) => l.variantId === i.variantId)) && (check.coupon?.code ?? null) === (s.coupon ?? null) ? check : null;
   return { check: current, notes, dismissNotes: () => setNotes([]), checking, recheck: () => setRound((n) => n + 1) };
 }

@@ -582,6 +582,7 @@ function OrderView({ number, back }: { number: number; back: () => void }) {
           {order.bulkDiscount ? <p class="text-right text-xs text-brand-700">You saved {money(order.bulkDiscount)} with bulk discounts</p> : null}
           {(order.discount ?? 0) > 0 && <div class="flex justify-between"><dt class="text-zinc-600">Discount</dt><dd class="tabular-nums">−{money(order.discount ?? 0)}</dd></div>}
           <div class="flex justify-between"><dt class="text-zinc-600">Delivery</dt><dd class="tabular-nums">{order.deliveryFee === 0 ? 'Free' : money(order.deliveryFee)}</dd></div>
+          {order.couponDiscount ? <div class="flex justify-between text-brand-700"><dt>Coupon <span class="font-mono">{order.couponCode}</span></dt><dd class="tabular-nums">−{money(order.couponDiscount)}</dd></div> : null}
           <div class="flex justify-between pt-1.5 text-base font-bold"><dt>Total{order.paymentMethod === 'cod' ? ' (cash on delivery)' : ''}</dt><dd class="tabular-nums">{money(order.total)}</dd></div>
         </dl>
       </section>

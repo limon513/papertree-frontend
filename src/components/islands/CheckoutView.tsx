@@ -3,6 +3,7 @@ import { AlertCircle, ArrowLeft, Banknote, Check, Info, Lock, Minus, Plus, Shopp
 import { cart, selectedOf, subtotalOf, useCart } from '@/lib/cart';
 import { useCartCheck } from '@/lib/cart-check';
 import { BulkNote, LineMoney, lineOf } from './BulkNote';
+import { CouponBox, couponOf, CouponRow } from './CouponBox';
 import { saveContact, savedContact } from '@/lib/contact';
 import { openSignIn, useMe, type SavedAddress } from '@/lib/account';
 import { areasOf, loadPlaces } from '@/lib/places';
@@ -134,7 +135,9 @@ export default function CheckoutView() {
 
   const subtotal = check?.subtotal ?? subtotalOf({ ...s, items: picked });
   const fee = s.deliverTo && check?.delivery ? check.delivery.fee : null;
-  const total = subtotal + (fee ?? 0);
+  // The coupon, as the shop worked it out (nothing when it does not apply).
+  const cp = couponOf(check, s.coupon);
+  const total = subtotal - cp.itemsOff + Math.max(0, (fee ?? 0) - cp.deliveryOff);
   // The total is known once the shop has priced the cart for this area.
   const priced = !!check && fee !== null && !checking;
 
@@ -179,6 +182,8 @@ export default function CheckoutView() {
           paymentMethod: 'cod',
           expectedTotal: total,
           requestId: requestId.current,
+          // Only a code the shop said applies (it is checked again with the phone number).
+          couponCode: cp.ok ? s.coupon : null,
           website: form.website,
         }),
       });
@@ -190,12 +195,18 @@ export default function CheckoutView() {
         saveContact({ name: form.name.trim(), phone, email: showEmail ? form.email.trim() || null : null, address: form.address.trim() });
         // Only what was ordered leaves the cart; a "Buy now" order leaves the cart alone.
         if (!buy) cart.remove(picked.map((i) => i.variantId));
+        // The code was used on this order.
+        if (cp.ok) cart.setCoupon(null);
         location.replace(data.token ? `/checkout/thank-you/?o=${encodeURIComponent(data.token)}` : '/');
         return;
       }
       const error = data && 'error' in data ? data.error : undefined;
       const fields = error?.fields ?? {};
-      if (error?.code === 'PRICE_CHANGED' || Object.keys(fields).some((k) => k.startsWith('items.'))) {
+      if (error?.code === 'COUPON') {
+        // Only known once the phone number is in (e.g. already used): it comes off, the shopper sees the new total.
+        setProblem(`${s.coupon ? `${s.coupon}: ` : ''}${error.message ?? 'This code cannot be used.'} The total is updated: tap “Place order” to order without it.`);
+        cart.setCoupon(null);
+      } else if (error?.code === 'PRICE_CHANGED' || Object.keys(fields).some((k) => k.startsWith('items.'))) {
         // Prices or stock changed: show the cart as it is now and let the shopper look before ordering.
         setProblem(error?.message ?? 'Something in your cart changed. Please check and place the order again.');
         recheck();
@@ -416,6 +427,7 @@ export default function CheckoutView() {
             </dt>
             <dd class="font-medium tabular-nums">{!s.deliverTo ? <span class="text-zinc-400">Choose your area</span> : fee === null ? '…' : fee === 0 ? <span class="text-brand-700">Free</span> : money(fee)}</dd>
           </div>
+          <CouponRow code={s.coupon} off={cp.itemsOff + cp.deliveryOff} />
           <div class="flex items-baseline justify-between border-t border-zinc-100 pt-3">
             <dt class="font-semibold text-zinc-900">Total</dt>
             <dd class="text-2xl font-bold tabular-nums" aria-live="polite">
@@ -423,6 +435,7 @@ export default function CheckoutView() {
             </dd>
           </div>
         </dl>
+        <CouponBox check={check} checking={checking} className="mt-3" />
 
         {problem && (
           <p class="mt-3 flex gap-2 rounded-xl bg-red-50 px-3 py-2.5 text-sm text-red-800" role="alert">

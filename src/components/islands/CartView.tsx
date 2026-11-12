@@ -3,6 +3,7 @@ import { ArrowRight, Info, MapPin, Minus, Plus, ShieldCheck, ShoppingBag, Trash2
 import { cart, panel, selectedOf, subtotalOf, useCart } from '@/lib/cart';
 import { useCartCheck } from '@/lib/cart-check';
 import { BulkNote, LineMoney, lineOf } from './BulkNote';
+import { CouponBox, couponOf, CouponRow } from './CouponBox';
 import { cn, imageAt, links, money } from '@/lib/utils';
 
 /**
@@ -65,7 +66,9 @@ export default function CartView() {
   const savings = picked.reduce((sum, i) => sum + (i.regularPrice && i.regularPrice > i.price ? (i.regularPrice - i.price) * i.quantity : 0), 0);
   const d = picked.length ? (check?.delivery ?? null) : null;
   const fee = deliverTo && d ? d.fee : null;
-  const total = subtotal + (fee ?? 0);
+  // The coupon, as the shop worked it out (nothing when it does not apply).
+  const cp = picked.length ? couponOf(check, s.coupon) : { itemsOff: 0, deliveryOff: 0, ok: false };
+  const total = subtotal - cp.itemsOff + Math.max(0, (fee ?? 0) - cp.deliveryOff);
   const progress = d?.freeAbove ? Math.min(100, Math.round((subtotal / d.freeAbove) * 100)) : null;
 
   return (
@@ -225,7 +228,9 @@ export default function CartView() {
             </dt>
             <dd class="font-medium tabular-nums">{!deliverTo ? <span class="text-zinc-400">Choose area</span> : fee === null ? <span class="text-zinc-400">…</span> : fee === 0 ? <span class="text-brand-700">Free</span> : money(fee)}</dd>
           </div>
+          <CouponRow code={s.coupon} off={cp.itemsOff + cp.deliveryOff} />
         </dl>
+        {picked.length > 0 && <CouponBox check={check} checking={checking} className="mt-3" />}
 
         {deliverTo && progress !== null && d && (
           <div class="mt-3 rounded-xl bg-brand-50 px-3 py-2.5 text-sm text-brand-900">
