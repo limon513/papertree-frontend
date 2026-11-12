@@ -1,0 +1,75 @@
+---
+import { Clock, Mail, MapPin, MessageCircle, Phone } from 'lucide-preact';
+import Layout from '@/layouts/Layout.astro';
+import { getCatalog, getPage, NotFound } from '@/lib/api';
+import type { ContentPage } from '@/lib/types';
+
+/** A content page written in the admin (About us, Terms, Refund policy...), at its old address. */
+let page: ContentPage;
+try {
+  page = await getPage(Astro.params.slug!);
+} catch (err) {
+  if (err instanceof NotFound) return Astro.rewrite('/404/');
+  throw err;
+}
+const { store } = await getCatalog();
+const plain = (html: string | null) => (html ?? '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+const description = page.seoDescription ?? (plain(page.body).slice(0, 160) || `${page.title} — ${store.name} Bangladesh`);
+const whatsapp = store.whatsapp ? `https://wa.me/88${store.whatsapp.replace(/\D/g, '').replace(/^88/, '')}` : null;
+Astro.response.headers.set('cache-control', 'public, max-age=0, s-maxage=300, stale-while-revalidate=600');
+---
+
+<Layout title={page.seoTitle ?? page.title} description={description} canonical={`/${page.slug}/`}>
+  <article class="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
+    <h1 class="font-display text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">{page.title}</h1>
+    {page.body && <div class="rich-text mt-6" set:html={page.body} />}
+
+    {
+      page.showContact && (
+        <section class="mt-8 grid gap-3 sm:grid-cols-2" aria-label="Contact details">
+          {store.phone && (
+            <a href={`tel:${store.phone}`} class="flex items-center gap-3 rounded-2xl bg-white p-4 ring-1 ring-zinc-200 hover:ring-brand-300">
+              <Phone class="size-5 text-brand-600" />
+              <span>
+                <span class="block text-xs text-zinc-500">Call us</span>
+                <span class="font-semibold text-zinc-900">{store.phone}</span>
+              </span>
+            </a>
+          )}
+          {whatsapp && (
+            <a href={whatsapp} target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 rounded-2xl bg-white p-4 ring-1 ring-zinc-200 hover:ring-brand-300">
+              <MessageCircle class="size-5 text-brand-600" />
+              <span>
+                <span class="block text-xs text-zinc-500">WhatsApp</span>
+                <span class="font-semibold text-zinc-900">{store.whatsapp}</span>
+              </span>
+            </a>
+          )}
+          {store.email && (
+            <a href={`mailto:${store.email}`} class="flex items-center gap-3 rounded-2xl bg-white p-4 ring-1 ring-zinc-200 hover:ring-brand-300">
+              <Mail class="size-5 text-brand-600" />
+              <span class="min-w-0">
+                <span class="block text-xs text-zinc-500">Email</span>
+                <span class="block truncate font-semibold text-zinc-900">{store.email}</span>
+              </span>
+            </a>
+          )}
+          {store.address && (
+            <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(store.address)}`} target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 rounded-2xl bg-white p-4 ring-1 ring-zinc-200 hover:ring-brand-300">
+              <MapPin class="size-5 shrink-0 text-brand-600" />
+              <span>
+                <span class="block text-xs text-zinc-500">Visit us</span>
+                <span class="font-semibold text-zinc-900">{store.address}</span>
+              </span>
+            </a>
+          )}
+          {store.openingHours && (
+            <p class="flex items-center gap-3 rounded-2xl bg-zinc-50 p-4 text-sm text-zinc-700 sm:col-span-2">
+              <Clock class="size-5 text-brand-600" /> {store.openingHours}
+            </p>
+          )}
+        </section>
+      )
+    }
+  </article>
+</Layout>

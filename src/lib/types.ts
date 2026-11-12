@@ -52,6 +52,19 @@ export interface Catalog {
   brands: BrandInfo[];
   /** null: Google sign-in is switched off. */
   google: GoogleConfig | null;
+  /** Content pages linked in the footer. */
+  pages?: { title: string; slug: string }[];
+}
+
+/** A content page (About, Terms...) written in the admin. */
+export interface ContentPage {
+  slug: string;
+  title: string;
+  body: string | null;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  showContact: boolean;
+  updatedAt: string;
 }
 
 export interface ProductCard {

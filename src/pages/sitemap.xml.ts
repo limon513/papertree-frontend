@@ -11,6 +11,7 @@ interface SitemapData {
   products: { slug: string; updatedAt: string }[];
   categories: { path: string }[];
   brands: { slug: string; updatedAt: string }[];
+  pages?: { slug: string; updatedAt: string }[];
 }
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -27,6 +28,7 @@ export const GET: APIRoute = async () => {
     ...['/', '/shop/', '/categories/', '/brands/', '/deals/', '/new/'].map((p) => url(p)),
     ...data.categories.map((c) => url(links.category(c.path.split('/')))),
     ...data.brands.map((b) => url(links.brand(b.slug), b.updatedAt)),
+    ...(data.pages ?? []).map((p) => url(`/${p.slug}/`, p.updatedAt)),
     ...data.products.map((p) => url(links.product(p.slug), p.updatedAt)),
     '</urlset>',
   ].join('\n');
