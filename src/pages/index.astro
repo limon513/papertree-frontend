@@ -159,7 +159,7 @@ Astro.response.headers.set('cache-control', 'public, max-age=0, s-maxage=60, sta
     )
   }
 
-  <!-- Wholesale: until business sign-up is online, by WhatsApp. -->
+  <!-- Wholesale: the business sign-up on the account page (or a question on WhatsApp). -->
   <section class="mx-auto max-w-7xl px-4 sm:px-6">
     <div class="flex flex-col items-start gap-4 rounded-3xl bg-brand-800 p-6 text-white sm:flex-row sm:items-center sm:p-8">
       <Building2 class="size-10 shrink-0 text-brand-300" />
@@ -167,13 +167,18 @@ Astro.response.headers.set('cache-control', 'public, max-age=0, s-maxage=60, sta
         <h2 class="font-display text-xl font-bold sm:text-2xl">Buying for a shop, school or office?</h2>
         <p class="mt-1 text-sm text-brand-100">Wholesale prices, a small advance and the rest cash on delivery.</p>
       </div>
-      {
-        whatsapp && (
-          <a href={whatsapp} target="_blank" rel="noopener noreferrer" class="flex h-11 shrink-0 items-center rounded-full bg-white px-5 text-sm font-semibold text-brand-800 hover:bg-brand-50">
-            Ask on WhatsApp
-          </a>
-        )
-      }
+      <div class="flex shrink-0 flex-wrap gap-2">
+        <a href="/account/?business" class="flex h-11 items-center rounded-full bg-white px-5 text-sm font-semibold text-brand-800 hover:bg-brand-50">
+          Ask for wholesale prices
+        </a>
+        {
+          whatsapp && (
+            <a href={whatsapp} target="_blank" rel="noopener noreferrer" class="flex h-11 items-center rounded-full px-5 text-sm font-semibold text-white ring-1 ring-white/40 hover:bg-white/10">
+              WhatsApp us
+            </a>
+          )
+        }
+      </div>
     </div>
   </section>
 </Layout>

@@ -31,7 +31,10 @@ export interface Me {
   email: string | null;
   avatarUrl: string | null;
   google: boolean;
+  /** An approved business: buys at wholesale prices. */
   business: boolean;
+  /** The wholesale request and its answer (null: never asked). */
+  businessRequest: { status: 'pending' | 'approved' | 'rejected'; businessName: string | null; businessType: string | null; appliedAt: string | null } | null;
   /** The address to fill in at checkout. */
   address: { districtId: string; areaId: string | null; address: string } | null;
   /** Default first, then the latest used. */
