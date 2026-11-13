@@ -19,7 +19,7 @@ type BusinessType = (typeof TYPES)[number][0];
 const card = 'rounded-2xl bg-white ring-1 ring-zinc-200';
 const input = 'mt-1 h-12 w-full rounded-xl border border-zinc-300 bg-white px-3.5 text-[16px] outline-none focus:border-brand-500 focus:ring-3 focus:ring-brand-100 aria-[invalid=true]:border-red-500';
 const label = 'block text-sm font-medium text-zinc-800';
-const primary = 'flex h-12 items-center justify-center gap-2 rounded-full bg-brand-700 px-5 font-semibold text-white hover:bg-brand-800 disabled:opacity-50';
+const primary = 'flex h-12 items-center justify-center gap-2 rounded-xl bg-brand-700 px-5 font-semibold text-white hover:bg-brand-800 disabled:opacity-50';
 const day = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
 export function BusinessCard({ m }: { m: Me }) {
@@ -85,7 +85,7 @@ export function BusinessCard({ m }: { m: Me }) {
               ? 'Your last request was not approved. If something has changed, you can ask again or call us.'
               : 'Buying for a shop, school or office? Ask for a business account to get wholesale prices.'}
           </p>
-          <button type="button" onClick={() => setOpen(true)} class="mt-3 flex h-10 items-center rounded-full bg-brand-50 px-4 text-sm font-semibold text-brand-800 hover:bg-brand-100">
+          <button type="button" onClick={() => setOpen(true)} class="mt-3 flex h-10 items-center rounded-xl bg-brand-50 px-4 text-sm font-semibold text-brand-800 hover:bg-brand-100">
             Ask for wholesale prices
           </button>
           <a href="/wholesale/" class="mt-2 inline-block text-sm font-medium text-brand-700 hover:underline">

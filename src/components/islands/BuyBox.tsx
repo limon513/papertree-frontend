@@ -237,7 +237,7 @@ export default function BuyBox({ productId, slug, name, options, variants: retai
         class={inWindow ? 'mt-4' : 'fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 border-t border-zinc-200 bg-white/95 p-3 backdrop-blur md:static md:mt-4 md:border-0 md:bg-transparent md:p-0'}
       >
         <div class="flex gap-2">
-          <div class="flex h-12 shrink-0 items-center rounded-full bg-white ring-1 ring-zinc-300">
+          <div class="flex h-12 shrink-0 items-center rounded-xl bg-white ring-1 ring-zinc-300">
             <button type="button" onClick={() => setQuantity((q) => Math.max(1, q - 1))} disabled={quantity <= 1} class="flex size-11 items-center justify-center rounded-full text-zinc-600 hover:bg-zinc-100 disabled:opacity-30" aria-label="One less">
               <Minus class="size-4" />
             </button>
@@ -259,7 +259,7 @@ export default function BuyBox({ productId, slug, name, options, variants: retai
             onClick={add}
             disabled={!canAdd}
             class={cn(
-              'flex h-12 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full px-3 text-sm font-semibold whitespace-nowrap transition sm:text-base',
+              'flex h-12 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-xl px-3 text-sm font-semibold whitespace-nowrap transition sm:text-base',
               added ? 'bg-brand-100 text-brand-800' : 'bg-white text-brand-800 ring-2 ring-brand-700 hover:bg-brand-50',
               'disabled:bg-zinc-100 disabled:text-zinc-400 disabled:ring-0',
             )}
@@ -279,7 +279,7 @@ export default function BuyBox({ productId, slug, name, options, variants: retai
             )}
           </button>
           {variant?.inStock && (
-            <button type="button" onClick={buyNow} class="flex h-12 min-w-0 flex-1 items-center justify-center rounded-full bg-brand-700 px-3 text-sm font-semibold whitespace-nowrap text-white hover:bg-brand-800 sm:text-base">
+            <button type="button" onClick={buyNow} class="flex h-12 min-w-0 flex-1 items-center justify-center rounded-xl bg-brand-700 px-3 text-sm font-semibold whitespace-nowrap text-white hover:bg-brand-800 sm:text-base">
               Buy now
             </button>
           )}

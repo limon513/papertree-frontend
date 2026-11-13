@@ -95,7 +95,7 @@ export function DeliverToDialog() {
             </select>
           </label>
         </div>
-        <button type="button" onClick={save} disabled={!districtId} class="mt-5 h-12 w-full rounded-full bg-brand-700 font-semibold text-white hover:bg-brand-800 disabled:opacity-40">
+        <button type="button" onClick={save} disabled={!districtId} class="mt-5 h-12 w-full rounded-xl bg-brand-700 font-semibold text-white hover:bg-brand-800 disabled:opacity-40">
           Save
         </button>
       </div>

@@ -211,7 +211,7 @@ export default function SignIn({ google }: { google: GoogleConfig | null }) {
               type="button"
               onClick={withGoogle}
               disabled={!!busy}
-              class="relative mt-5 flex h-13 w-full items-center justify-center gap-3 rounded-full border-2 border-brand-600 bg-white font-semibold text-zinc-900 hover:bg-brand-50 disabled:opacity-50"
+              class="relative mt-5 flex h-13 w-full items-center justify-center gap-3 rounded-xl border-2 border-brand-600 bg-white font-semibold text-zinc-900 hover:bg-brand-50 disabled:opacity-50"
             >
               {busy === 'google' ? <Loader2 class="size-5 animate-spin" /> : <GoogleG />}
               Continue with Google
@@ -275,7 +275,7 @@ export default function SignIn({ google }: { google: GoogleConfig | null }) {
               />
             </div>
             {error && <p class="mt-2 text-sm text-red-600">{error}</p>}
-            <button type="submit" disabled={!!busy} class="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-brand-700 font-semibold text-white hover:bg-brand-800 disabled:opacity-50">
+            <button type="submit" disabled={!!busy} class="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-700 font-semibold text-white hover:bg-brand-800 disabled:opacity-50">
               {busy === 'code' && <Loader2 class="size-5 animate-spin" />}
               Send me a code
             </button>
@@ -311,7 +311,7 @@ export default function SignIn({ google }: { google: GoogleConfig | null }) {
               class={cn(input, 'mt-4 text-center text-2xl font-semibold tracking-[0.5em]')}
             />
             {error && <p class="mt-2 text-sm text-red-600">{error}</p>}
-            <button type="submit" disabled={!!busy || code.length !== 6} class="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-brand-700 font-semibold text-white hover:bg-brand-800 disabled:opacity-50">
+            <button type="submit" disabled={!!busy || code.length !== 6} class="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-700 font-semibold text-white hover:bg-brand-800 disabled:opacity-50">
               {busy === 'verify' && <Loader2 class="size-5 animate-spin" />}
               Sign in
             </button>
@@ -335,7 +335,7 @@ export default function SignIn({ google }: { google: GoogleConfig | null }) {
               <input ref={field} value={name} onInput={(e) => (setName(e.currentTarget.value), setError(null))} autocomplete="name" maxLength={100} class={input} aria-invalid={!!error} />
             </label>
             {error && <p class="mt-2 text-sm text-red-600">{error}</p>}
-            <button type="submit" disabled={!!busy} class="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-brand-700 font-semibold text-white hover:bg-brand-800 disabled:opacity-50">
+            <button type="submit" disabled={!!busy} class="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-700 font-semibold text-white hover:bg-brand-800 disabled:opacity-50">
               {busy === 'verify' && <Loader2 class="size-5 animate-spin" />}
               Create my account
             </button>

@@ -33,7 +33,7 @@ const day = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: 'n
 const card = 'rounded-2xl bg-white ring-1 ring-zinc-200';
 const input = 'mt-1 h-12 w-full rounded-xl border border-zinc-300 bg-white px-3.5 text-[16px] outline-none focus:border-brand-500 focus:ring-3 focus:ring-brand-100 aria-[invalid=true]:border-red-500';
 const label = 'block text-sm font-medium text-zinc-800';
-const primary = 'flex h-12 items-center justify-center gap-2 rounded-full bg-brand-700 px-5 font-semibold text-white hover:bg-brand-800 disabled:opacity-50';
+const primary = 'flex h-12 items-center justify-center gap-2 rounded-xl bg-brand-700 px-5 font-semibold text-white hover:bg-brand-800 disabled:opacity-50';
 const quiet = 'flex h-11 items-center justify-center gap-2 rounded-full px-4 text-sm font-semibold text-zinc-700 ring-1 ring-zinc-200 hover:bg-zinc-50 disabled:opacity-50';
 
 function Status({ status }: { status: string }) {
@@ -64,7 +64,7 @@ function OrderAgain({ load, className }: { load: () => Promise<{ variantId: numb
   };
   return (
     <span class={className}>
-      <button type="button" onClick={go} disabled={busy} class="flex h-9 items-center gap-1.5 rounded-full bg-brand-50 px-3.5 text-sm font-semibold text-brand-800 hover:bg-brand-100 disabled:opacity-60">
+      <button type="button" onClick={go} disabled={busy} class="flex h-9 items-center gap-1.5 rounded-xl bg-brand-50 px-3.5 text-sm font-semibold text-brand-800 hover:bg-brand-100 disabled:opacity-60">
         {busy ? <Loader2 class="size-4 animate-spin" /> : <RotateCcw class="size-4" />} Order again
       </button>
       {note && (
@@ -191,7 +191,7 @@ export default function AccountView() {
               ))}
             </ul>
             {orders.page < orders.pages && (
-              <button type="button" onClick={() => loadOrders(orders.page + 1)} class="mt-4 h-11 w-full rounded-full text-sm font-semibold text-brand-700 ring-1 ring-brand-200 hover:bg-brand-50">
+              <button type="button" onClick={() => loadOrders(orders.page + 1)} class="mt-4 h-11 w-full rounded-xl text-sm font-semibold text-brand-700 ring-1 ring-brand-200 hover:bg-brand-50">
                 Show older orders
               </button>
             )}
@@ -452,7 +452,7 @@ function AddressDialog({ address, close }: { address: SavedAddress | null; close
               type="button"
               aria-pressed={f.label === l}
               onClick={() => setF((x) => ({ ...x, label: x.label === l ? '' : l }))}
-              class="h-9 rounded-full px-4 text-sm font-medium ring-1 ring-zinc-300 aria-pressed:bg-brand-700 aria-pressed:text-white aria-pressed:ring-brand-700"
+              class="h-9 rounded-xl px-4 text-sm font-medium ring-1 ring-zinc-300 aria-pressed:bg-brand-700 aria-pressed:text-white aria-pressed:ring-brand-700"
             >
               {l}
             </button>

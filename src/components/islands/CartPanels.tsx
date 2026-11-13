@@ -144,7 +144,7 @@ export function CartDrawer() {
                 <p class="mb-2 text-center text-sm font-medium text-brand-700">Bulk discount saves you {money(check!.bulkSavings!)}</p>
               )}
               {picked.length ? (
-                <a href="/checkout/" class="flex h-12 items-center justify-between rounded-full bg-brand-700 px-5 font-semibold text-white hover:bg-brand-800">
+                <a href="/checkout/" class="flex h-12 items-center justify-between rounded-xl bg-brand-700 px-5 font-semibold text-white hover:bg-brand-800">
                   <span>Checkout{allPicked ? '' : ` (${pickedCount})`}</span>
                   <span class="tabular-nums">{money(subtotal - cp.itemsOff + Math.max(0, (fee ?? 0) - cp.deliveryOff))}</span>
                 </a>
