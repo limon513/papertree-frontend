@@ -587,7 +587,11 @@ function OrderView({ number, back }: { number: number; back: () => void }) {
           {(order.discount ?? 0) > 0 && <div class="flex justify-between"><dt class="text-zinc-600">Discount</dt><dd class="tabular-nums">−{money(order.discount ?? 0)}</dd></div>}
           <div class="flex justify-between"><dt class="text-zinc-600">Delivery</dt><dd class="tabular-nums">{order.deliveryFee === 0 ? 'Free' : money(order.deliveryFee)}</dd></div>
           {order.couponDiscount ? <div class="flex justify-between text-brand-700"><dt>Coupon <span class="font-mono">{order.couponCode}</span></dt><dd class="tabular-nums">−{money(order.couponDiscount)}</dd></div> : null}
-          <div class="flex justify-between pt-1.5 text-base font-bold"><dt>Total{order.paymentMethod === 'cod' ? ' (cash on delivery)' : ''}</dt><dd class="tabular-nums">{money(order.total)}</dd></div>
+          <div class="flex justify-between pt-1.5 text-base font-bold"><dt>Total{order.paymentMethod === 'cod' && order.type !== 'wholesale' ? ' (cash on delivery)' : ''}</dt><dd class="tabular-nums">{money(order.total)}</dd></div>
+          {(order.paidAmount ?? 0) > 0 && <div class="flex justify-between text-brand-700"><dt>Paid</dt><dd class="tabular-nums">{money(order.paidAmount ?? 0)}</dd></div>}
+          {order.type === 'wholesale' && (order.advanceRequired ?? 0) > (order.paidAmount ?? 0) && order.status !== 'cancelled' && (
+            <div class="flex justify-between text-brand-800"><dt>Advance to pay{order.payAdvance ? <span class="block text-xs font-normal text-zinc-500 whitespace-pre-line">{order.payAdvance}</span> : null}</dt><dd class="font-semibold tabular-nums">{money(Math.round(((order.advanceRequired ?? 0) - (order.paidAmount ?? 0)) * 100) / 100)}</dd></div>
+          )}
         </dl>
       </section>
 

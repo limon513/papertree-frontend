@@ -1,5 +1,5 @@
 ---
-import { CheckCircle2, MessageCircle, Phone, Truck, XCircle } from 'lucide-preact';
+import { Banknote, CheckCircle2, MessageCircle, Phone, Truck, XCircle } from 'lucide-preact';
 import Layout from '@/layouts/Layout.astro';
 import { getCatalog, getOrder, NotFound } from '@/lib/api';
 import type { PlacedOrder } from '@/lib/types';
@@ -22,6 +22,13 @@ const firstName = order?.customerName.split(' ')[0];
 const STATE: Record<string, string> = { confirmed: 'is confirmed', packed: 'is confirmed', shipped: 'is on the way', delivered: 'is delivered', cancelled: 'is cancelled', returned: 'was returned' };
 const moved = order && order.status !== 'pending' ? (STATE[order.status] ?? null) : null;
 const place = order ? [order.address, order.areaName, order.districtName].filter(Boolean).join(', ') : '';
+const cents = (n: number) => Math.round(n * 100) / 100;
+/** Still to pay, all of it (cash on delivery) unless some was paid already. */
+const due = order ? Math.max(0, cents(order.total - (order.paidAmount ?? 0))) : 0;
+const wholesale = order?.type === 'wholesale';
+/** A wholesale advance not paid yet: how much, and what is left for delivery. */
+const advance = order && wholesale && (order.advanceRequired ?? 0) > (order.paidAmount ?? 0) ? cents((order.advanceRequired ?? 0) - (order.paidAmount ?? 0)) : null;
+const payLine = due <= 0 ? 'It is fully paid.' : null;
 const whatsapp = order && store.whatsapp ? `https://wa.me/88${store.whatsapp}?text=${encodeURIComponent(`Hello PaperTree, about my order #${order.number}`)}` : null;
 ---
 
@@ -42,13 +49,13 @@ const whatsapp = order && store.whatsapp ? `https://wa.me/88${store.whatsapp}?te
               <h1 class="mt-3 font-display text-2xl font-bold tracking-tight sm:text-3xl">Your order #{order.number} {moved}</h1>
               {(order.status === 'confirmed' || order.status === 'packed') && (
                 <p class="mt-2 text-zinc-700">
-                  We are getting it ready and will send it to <strong>{place}</strong>{order.deliveryTime && <>, usually in <strong>{order.deliveryTime}</strong></>}. Pay <strong>{money(order.total)}</strong> in cash when it arrives.
+                  We are getting it ready and will send it to <strong>{place}</strong>{order.deliveryTime && <>, usually in <strong>{order.deliveryTime}</strong></>}. {payLine ?? <>Pay <strong>{money(due)}</strong> in cash when it arrives.</>}
                 </p>
               )}
               {order.status === 'shipped' && (
                 <>
                   <p class="mt-2 text-zinc-700">
-                    It is on the way to <strong>{place}</strong>{order.courier && <> with <strong>{order.courier}</strong></>}. Pay <strong>{money(order.total)}</strong> in cash when it arrives.
+                    It is on the way to <strong>{place}</strong>{order.courier && <> with <strong>{order.courier}</strong></>}. {payLine ?? <>Pay <strong>{money(due)}</strong> in cash when it arrives.</>}
                   </p>
                   {order.trackingCode && <p class="mt-2 text-sm text-zinc-600">Tracking code: <strong class="font-mono text-zinc-900 select-all">{order.trackingCode}</strong></p>}
                 </>
@@ -62,11 +69,20 @@ const whatsapp = order && store.whatsapp ? `https://wa.me/88${store.whatsapp}?te
               <CheckCircle2 class="mx-auto size-14 text-brand-600" />
               <h1 class="mt-3 font-display text-2xl font-bold tracking-tight sm:text-3xl">Thank you, {firstName}!</h1>
               <p class="mt-1 text-lg text-zinc-700">
-                Your order <strong class="text-zinc-900">#{order.number}</strong> is placed.
+                Your {wholesale ? 'wholesale order' : 'order'} <strong class="text-zinc-900">#{order.number}</strong> is placed.
               </p>
             </div>
-  
+
             <ol class="mt-8 space-y-4 rounded-2xl bg-brand-50 p-5 text-sm text-brand-950">
+              {advance !== null && (
+                <li class="flex gap-3">
+                  <Banknote class="mt-0.5 size-5 shrink-0 text-brand-700" />
+                  <span>
+                    Pay the advance of <strong>{money(advance)}</strong>
+                    {order.payAdvance ? <>: <span class="whitespace-pre-line">{order.payAdvance}</span></> : ' (we call you with the details)'}. Write <strong>#{order.number}</strong> as the reference.
+                  </span>
+                </li>
+              )}
               <li class="flex gap-3">
                 <Phone class="mt-0.5 size-5 shrink-0 text-brand-700" />
                 <span>We will call you on <strong>{order.phone}</strong> soon to confirm.</span>
@@ -74,12 +90,12 @@ const whatsapp = order && store.whatsapp ? `https://wa.me/88${store.whatsapp}?te
               <li class="flex gap-3">
                 <Truck class="mt-0.5 size-5 shrink-0 text-brand-700" />
                 <span>
-                  Then we send it to <strong>{place}</strong>{order.deliveryTime && <>, usually in <strong>{order.deliveryTime}</strong></>}.
+                  {advance !== null ? 'Once the advance arrives, we send it' : 'Then we send it'} to <strong>{place}</strong>{order.deliveryTime && <>, usually in <strong>{order.deliveryTime}</strong></>}.
                 </span>
               </li>
               <li class="flex gap-3">
                 <CheckCircle2 class="mt-0.5 size-5 shrink-0 text-brand-700" />
-                <span>Pay <strong>{money(order.total)}</strong> in cash when it arrives.</span>
+                <span>{payLine ?? <>Pay {advance !== null ? 'the rest, ' : ''}<strong>{money(advance !== null ? cents(due - advance) : due)}</strong>, in cash when it arrives.</>}</span>
               </li>
             </ol>
             </>
@@ -108,7 +124,9 @@ const whatsapp = order && store.whatsapp ? `https://wa.me/88${store.whatsapp}?te
               {order.bulkDiscount ? <p class="text-right text-xs text-brand-700">You saved {money(order.bulkDiscount)} with bulk discounts</p> : null}
               <div class="flex justify-between"><dt class="text-zinc-600">Delivery</dt><dd class="tabular-nums">{order.deliveryFee === 0 ? 'Free' : money(order.deliveryFee)}</dd></div>
               {order.couponDiscount ? <div class="flex justify-between text-brand-700"><dt>Coupon <span class="font-mono">{order.couponCode}</span></dt><dd class="tabular-nums">−{money(order.couponDiscount)}</dd></div> : null}
-              <div class="flex justify-between pt-1.5 text-base font-bold"><dt>Total{order.paymentMethod === 'cod' ? ' (cash on delivery)' : ''}</dt><dd class="tabular-nums">{money(order.total)}</dd></div>
+              <div class="flex justify-between pt-1.5 text-base font-bold"><dt>Total{order.paymentMethod === 'cod' && !wholesale ? ' (cash on delivery)' : ''}</dt><dd class="tabular-nums">{money(order.total)}</dd></div>
+              {(order.paidAmount ?? 0) > 0 && <div class="flex justify-between text-brand-700"><dt>Paid</dt><dd class="tabular-nums">{money(order.paidAmount ?? 0)}</dd></div>}
+              {advance !== null && <div class="flex justify-between text-brand-800"><dt>Advance to pay now</dt><dd class="font-semibold tabular-nums">{money(advance)}</dd></div>}
             </dl>
           </section>
 
