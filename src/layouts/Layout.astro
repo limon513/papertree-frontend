@@ -42,7 +42,7 @@ const catalog = await getCatalog();
 const { store, categories } = catalog;
 const path = Astro.url.pathname;
 // Which menu item to highlight: the main category of a category page (or of the product), Deals, Brands.
-const active = section ?? path.match(/^\/product-category\/([^/]+)/)?.[1] ?? (path.startsWith('/deals') ? 'deals' : path.startsWith('/brand') ? 'brands' : null);
+const active = section ?? path.match(/^\/product-category\/([^/]+)/)?.[1] ?? (path.startsWith('/deals') ? 'deals' : path.startsWith('/brand') ? 'brands' : path.startsWith('/wholesale') ? 'wholesale' : null);
 const pageTitle = fullTitle ? title : `${title} | ${store.name}`;
 const pageDescription = description ?? store.tagline ?? 'Paper, stationery and art supplies, delivered across Bangladesh.';
 const canonicalUrl = SITE_URL + (canonical ?? path);
@@ -145,6 +145,13 @@ const imageOrigin = store.logo ? new URL(imageAt(store.logo, 160)).origin : null
           class="rounded-full px-3 py-2 text-sm whitespace-nowrap text-zinc-700 hover:bg-zinc-100 aria-[current=page]:bg-brand-50 aria-[current=page]:font-semibold aria-[current=page]:text-brand-800"
         >
           Brands
+        </a>
+        <a
+          href="/wholesale/"
+          aria-current={active === 'wholesale' ? 'page' : undefined}
+          class="rounded-full px-3 py-2 text-sm whitespace-nowrap text-zinc-700 hover:bg-zinc-100 aria-[current=page]:bg-brand-50 aria-[current=page]:font-semibold aria-[current=page]:text-brand-800"
+        >
+          Wholesale
         </a>
       </nav>
     </header>

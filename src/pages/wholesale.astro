@@ -1,0 +1,157 @@
+---
+import { BadgePercent, Briefcase, Building2, GraduationCap, PhoneCall, ShoppingBag, Store, Truck, UserRound, Wallet } from 'lucide-preact';
+import WholesaleCta from '@/components/islands/WholesaleCta';
+import Layout from '@/layouts/Layout.astro';
+import { getCatalog } from '@/lib/api';
+import { money } from '@/lib/utils';
+
+/**
+ * Wholesale for businesses: who it is for, how to get it (three steps), and the shop's terms. The
+ * button sends shoppers to the business sign-up on the account page.
+ */
+const catalog = await getCatalog();
+const { store } = catalog;
+const terms = catalog.wholesale ?? { advancePercent: 5, minOrderAmount: null, delivery: 'retail', deliveryFee: null, terms: null };
+const whatsapp = store.whatsapp
+  ? `https://wa.me/88${store.whatsapp.replace(/\D/g, '').replace(/^88/, '')}?text=${encodeURIComponent(`Hello ${store.name}, I want to buy wholesale for my business.`)}`
+  : null;
+const delivery =
+  terms.delivery === 'free'
+    ? 'Free delivery on wholesale orders.'
+    : terms.delivery === 'paid_on_delivery'
+      ? 'You pay the courier when it arrives.'
+      : terms.delivery === 'fixed' && terms.deliveryFee !== null
+        ? `A fixed ${money(terms.deliveryFee)} delivery charge.`
+        : 'The usual delivery charge for your area.';
+const who = [
+  { Icon: Store, title: 'Shops and resellers', text: 'Stationery shops, bookshops and gift shops that sell on.' },
+  { Icon: GraduationCap, title: 'Schools and coaching', text: 'Exam papers, notebooks, art supplies for classes.' },
+  { Icon: Briefcase, title: 'Offices and companies', text: 'Paper, files, pens and desk supplies every month.' },
+  { Icon: ShoppingBag, title: 'Events and others', text: 'Workshops, NGOs and anyone buying in quantity.' },
+];
+const steps = [
+  { Icon: UserRound, title: 'Ask', text: 'Sign in with your phone number and tell us your business name, kind and address. It takes a minute; a trade licence is optional.' },
+  { Icon: PhoneCall, title: 'We call you', text: store.phone ? `We call to confirm, usually within a working day. In a hurry? Call ${store.phone}.` : 'We call to confirm, usually within a working day.' },
+  { Icon: BadgePercent, title: 'Buy at wholesale prices', text: 'Once approved, every product shows your wholesale price while you are signed in, and your orders use it.' },
+];
+Astro.response.headers.set('cache-control', 'public, max-age=0, s-maxage=300, stale-while-revalidate=600');
+---
+
+<Layout
+  title="Wholesale for shops, schools and offices"
+  description={`Wholesale prices on stationery, paper and art supplies for businesses across Bangladesh. Ask for a business account in a minute; ${terms.advancePercent > 0 ? `${terms.advancePercent}% advance, the rest cash on delivery` : 'cash on delivery'}.`}
+  canonical="/wholesale/"
+>
+  <!-- Top -->
+  <section class="bg-brand-800 text-white">
+    <div class="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
+      <p class="flex items-center gap-2 text-sm font-semibold tracking-wide text-brand-200 uppercase"><Building2 class="size-4" /> Wholesale</p>
+      <h1 class="mt-2 max-w-2xl font-display text-3xl font-bold tracking-tight sm:text-4xl">Wholesale prices for shops, schools and offices</h1>
+      <p class="mt-3 max-w-2xl text-brand-100">
+        Buying in quantity? Get a business account and pay less on every product that has a wholesale price{terms.advancePercent > 0 ? <>, with a small advance and the rest cash on delivery</> : <>, cash on delivery</>}.
+      </p>
+      <div class="mt-6">
+        <WholesaleCta client:load whatsapp={whatsapp} dark />
+      </div>
+    </div>
+  </section>
+
+  <div class="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-12">
+    <!-- How -->
+    <section aria-labelledby="how">
+      <h2 id="how" class="font-display text-2xl font-bold">How it works</h2>
+      <ol class="mt-5 grid gap-4 sm:grid-cols-3">
+        {
+          steps.map(({ Icon, title, text }, i) => (
+            <li class="rounded-2xl bg-white p-5 ring-1 ring-zinc-200">
+              <span class="flex items-center gap-3">
+                <span class="flex size-9 items-center justify-center rounded-full bg-brand-700 text-sm font-bold text-white">{i + 1}</span>
+                <Icon class="size-5 text-brand-700" />
+              </span>
+              <h3 class="mt-3 font-semibold text-zinc-900">{title}</h3>
+              <p class="mt-1 text-sm text-zinc-600">{text}</p>
+            </li>
+          ))
+        }
+      </ol>
+    </section>
+
+    <!-- Who -->
+    <section class="mt-12" aria-labelledby="who">
+      <h2 id="who" class="font-display text-2xl font-bold">Who it is for</h2>
+      <ul class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {
+          who.map(({ Icon, title, text }) => (
+            <li class="rounded-2xl bg-brand-50 p-4">
+              <Icon class="size-6 text-brand-700" />
+              <p class="mt-2 font-semibold text-zinc-900">{title}</p>
+              <p class="mt-0.5 text-sm text-zinc-600">{text}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <!-- Terms -->
+    <section class="mt-12" aria-labelledby="terms">
+      <h2 id="terms" class="font-display text-2xl font-bold">Terms</h2>
+      <ul class="mt-5 grid gap-3 sm:grid-cols-3">
+        <li class="flex gap-3 rounded-2xl bg-white p-4 ring-1 ring-zinc-200">
+          <Wallet class="mt-0.5 size-5 shrink-0 text-brand-700" />
+          <span class="text-sm text-zinc-700">
+            <span class="block font-semibold text-zinc-900">Payment</span>
+            {terms.advancePercent > 0 ? `${terms.advancePercent}% advance (bKash or Nagad) before we send, the rest cash on delivery.` : 'Cash on delivery, no advance.'}
+          </span>
+        </li>
+        <li class="flex gap-3 rounded-2xl bg-white p-4 ring-1 ring-zinc-200">
+          <ShoppingBag class="mt-0.5 size-5 shrink-0 text-brand-700" />
+          <span class="text-sm text-zinc-700">
+            <span class="block font-semibold text-zinc-900">Minimum order</span>
+            {terms.minOrderAmount ? `${money(terms.minOrderAmount)} per order.` : 'No minimum.'}
+          </span>
+        </li>
+        <li class="flex gap-3 rounded-2xl bg-white p-4 ring-1 ring-zinc-200">
+          <Truck class="mt-0.5 size-5 shrink-0 text-brand-700" />
+          <span class="text-sm text-zinc-700">
+            <span class="block font-semibold text-zinc-900">Delivery</span>
+            {delivery} All 64 districts.
+          </span>
+        </li>
+      </ul>
+      {terms.terms && <p class="mt-4 rounded-2xl bg-zinc-50 p-4 text-sm whitespace-pre-line text-zinc-700">{terms.terms}</p>}
+      <p class="mt-4 text-sm text-zinc-500">Regular buyers can agree their own terms with us (advance, minimum order, delivery).</p>
+    </section>
+
+    <!-- Questions -->
+    <section class="mt-12" aria-labelledby="faq">
+      <h2 id="faq" class="font-display text-2xl font-bold">Questions</h2>
+      <div class="mt-4 divide-y divide-zinc-200 rounded-2xl bg-white ring-1 ring-zinc-200">
+        {
+          [
+            ['Do I need a trade licence?', 'No. Add the number if you have one; it helps us approve you faster.'],
+            ['Which products have wholesale prices?', 'Most of them. Product pages say “Lower wholesale price for shops, schools and offices” where there is one.'],
+            ['Can I use coupons too?', 'Coupons and bulk discounts are for retail orders. Your wholesale prices are already lower.'],
+            ['How do I see my prices?', 'Sign in with the phone number you used to ask. Prices change on every page, in the cart and at checkout.'],
+          ].map(([q, a]) => (
+            <details class="group px-5 py-4">
+              <summary class="cursor-pointer list-none font-medium text-zinc-900 marker:hidden">
+                <span class="flex items-center justify-between gap-3">
+                  {q}
+                  <span class="text-zinc-400 transition group-open:rotate-45" aria-hidden="true">+</span>
+                </span>
+              </summary>
+              <p class="mt-2 text-sm text-zinc-600">{a}</p>
+            </details>
+          ))
+        }
+      </div>
+    </section>
+
+    <!-- Bottom -->
+    <section class="mt-12 rounded-3xl bg-brand-50 p-6 sm:p-8">
+      <h2 class="font-display text-xl font-bold">Ready to buy wholesale?</h2>
+      <p class="mt-1 text-sm text-zinc-600">It takes a minute to ask. We call you to confirm.</p>
+      <div class="mt-4"><WholesaleCta client:visible whatsapp={whatsapp} /></div>
+    </section>
+  </div>
+</Layout>

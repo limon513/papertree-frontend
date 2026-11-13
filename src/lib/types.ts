@@ -54,6 +54,8 @@ export interface Catalog {
   google: GoogleConfig | null;
   /** Content pages linked in the footer. */
   pages?: { title: string; slug: string }[];
+  /** The shop's wholesale terms (for the Wholesale page). */
+  wholesale?: { advancePercent: number; minOrderAmount: number | null; delivery: 'retail' | 'fixed' | 'free' | 'paid_on_delivery'; deliveryFee: number | null; terms: string | null };
 }
 
 /** A content page (About, Terms...) written in the admin. */

@@ -176,8 +176,8 @@ export default function BuyBox({ productId, slug, name, options, variants: retai
           ) : (
             <span>
               Lower wholesale price for shops, schools and offices.{' '}
-              <a href="/account/?business" class="font-semibold text-brand-700 hover:underline">
-                Ask for a business account
+              <a href="/wholesale/" class="font-semibold text-brand-700 hover:underline">
+                See how to get it
               </a>
             </span>
           )}
