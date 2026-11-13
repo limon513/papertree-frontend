@@ -60,12 +60,25 @@ const missing = new Map<string, { referrer: string | null; count: number }>();
 
 export function countHit(path: string) {
   hits.set(path, (hits.get(path) ?? 0) + 1);
+  reportNow();
 }
 
 export function countNotFound(path: string, referrer: string | null) {
   const m = missing.get(path);
   if (m) m.count++;
   else if (missing.size < 500) missing.set(path, { referrer: referrer?.slice(0, 500) ?? null, count: 1 });
+  reportNow();
+}
+
+/**
+ * Sends what was counted, at most every 30 seconds, during a visit. (No timer started when the code
+ * loads: some hosts, like Cloudflare Workers, refuse that, and every page would fail.)
+ */
+let lastReport = Date.now();
+function reportNow() {
+  if (Date.now() - lastReport < 30_000) return;
+  lastReport = Date.now();
+  void report();
 }
 
 async function report() {
@@ -78,4 +91,3 @@ async function report() {
   missing.clear();
   await fetch(`${API}/v1/store/seen`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(10_000) }).catch(() => undefined);
 }
-setInterval(() => void report(), 30_000).unref?.();
