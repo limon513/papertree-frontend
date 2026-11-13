@@ -9,8 +9,8 @@ import { cn } from '@/lib/utils';
 export default function WholesaleCta({ whatsapp, dark = false }: { whatsapp: string | null; dark?: boolean }) {
   const m = useMe();
   const request = m?.businessRequest;
-  const primary = cn('flex h-12 items-center rounded-full px-6 font-semibold', dark ? 'bg-white text-brand-800 hover:bg-brand-50' : 'bg-brand-700 text-white hover:bg-brand-800');
-  const second = cn('flex h-12 items-center rounded-full px-6 font-semibold ring-1', dark ? 'text-white ring-white/40 hover:bg-white/10' : 'text-brand-700 ring-brand-200 hover:bg-brand-50');
+  const primary = cn('flex h-12 items-center rounded-xl px-6 font-semibold', dark ? 'bg-white text-brand-800 hover:bg-brand-50' : 'bg-brand-700 text-white hover:bg-brand-800');
+  const second = cn('flex h-12 items-center rounded-xl px-6 font-semibold ring-1', dark ? 'text-white ring-white/40 hover:bg-white/10' : 'text-brand-700 ring-brand-200 hover:bg-brand-50');
   const note = cn('flex items-start gap-2 text-sm', dark ? 'text-brand-100' : 'text-zinc-600');
 
   if (m?.business) {

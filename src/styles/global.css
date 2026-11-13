@@ -38,6 +38,15 @@
   --color-marigold-500: #e09d06;
   --color-marigold-700: #9a5b07;
 
+  /* Page width: roomy on big screens (1536px). */
+  --container-site: 96rem;
+
+  /* Corners: squarer than Tailwind's defaults, for a crisper, calmer look (cards 10px, banners 14px). */
+  --radius-lg: 0.375rem;
+  --radius-xl: 0.5rem;
+  --radius-2xl: 0.625rem;
+  --radius-3xl: 0.875rem;
+
   /* Warm paper white for page backgrounds. */
   --color-paper: #faf8f3;
 

@@ -12,7 +12,7 @@ const social = Object.entries(store.social).filter((e): e is [keyof typeof SOCIA
 ---
 
 <footer class="mt-12 bg-brand-950 text-brand-100">
-  <div class="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
+  <div class="mx-auto grid max-w-site gap-8 px-4 py-10 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
     <div>
       <div class="font-display text-xl font-bold text-white uppercase">{store.name}</div>
       {store.tagline && <p class="mt-2 text-sm text-brand-200">{store.tagline}</p>}
@@ -86,7 +86,7 @@ const social = Object.entries(store.social).filter((e): e is [keyof typeof SOCIA
     </div>
   </div>
   <div class="border-t border-white/10">
-    <div class="mx-auto flex max-w-7xl flex-wrap justify-between gap-2 px-4 py-4 text-xs text-brand-300 sm:px-6">
+    <div class="mx-auto flex max-w-site flex-wrap justify-between gap-2 px-4 py-4 text-xs text-brand-300 sm:px-6">
       <span>© {new Date().getFullYear()} {store.name} Bangladesh</span>
       <span>Cash on delivery · bKash · Nagad · Cards</span>
     </div>

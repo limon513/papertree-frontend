@@ -48,10 +48,10 @@ export default function CartView() {
           <p class="mt-1 text-sm text-zinc-500">Tap “Add” on any product and it lands here.</p>
         )}
         <div class="mt-5 flex flex-wrap justify-center gap-2">
-          <a href="/deals/" class="flex h-11 items-center gap-2 rounded-full bg-brand-700 px-5 text-sm font-semibold text-white hover:bg-brand-800">
+          <a href="/deals/" class="flex h-11 items-center gap-2 rounded-xl bg-brand-700 px-5 text-sm font-semibold text-white hover:bg-brand-800">
             Today’s deals <ArrowRight class="size-4" />
           </a>
-          <a href="/categories/" class="flex h-11 items-center rounded-full bg-white px-5 text-sm font-semibold text-zinc-800 ring-1 ring-zinc-300">
+          <a href="/categories/" class="flex h-11 items-center rounded-xl bg-white px-5 text-sm font-semibold text-zinc-800 ring-1 ring-zinc-300">
             Browse categories
           </a>
         </div>
@@ -134,7 +134,7 @@ export default function CartView() {
                     </button>
                   </div>
                   <div class="mt-auto flex items-center justify-between gap-2 pt-2">
-                    <div class="flex h-9 items-center rounded-full ring-1 ring-zinc-300">
+                    <div class="flex h-9 items-center rounded-xl ring-1 ring-zinc-300">
                       <button type="button" onClick={() => cart.setQuantity(item.variantId, item.quantity - 1)} class="flex size-9 items-center justify-center rounded-full text-zinc-600 hover:bg-zinc-100" aria-label={`One less ${item.name}`}>
                         {item.quantity === 1 ? <Trash2 class="size-3.5" /> : <Minus class="size-3.5" />}
                       </button>
@@ -263,7 +263,7 @@ export default function CartView() {
           {picked.length ? (
             <a
               href="/checkout/"
-              class="flex h-12 items-center justify-between gap-3 rounded-full bg-brand-700 px-5 font-semibold text-white hover:bg-brand-800 md:justify-center"
+              class="flex h-12 items-center justify-between gap-3 rounded-xl bg-brand-700 px-5 font-semibold text-white hover:bg-brand-800 md:justify-center"
             >
               <span>Checkout{allPicked ? '' : ` (${pickedCount})`}</span>
               <span class="tabular-nums md:hidden">{money(total)}</span>

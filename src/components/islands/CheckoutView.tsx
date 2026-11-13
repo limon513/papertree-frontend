@@ -121,7 +121,7 @@ export default function CheckoutView() {
       <ShoppingBag class="size-10 text-zinc-400" />
       <p class="mt-3 font-display text-xl font-bold">{title}</p>
       <p class="mt-1 text-sm text-zinc-500">{text}</p>
-      <a href={href} class="mt-5 flex h-11 items-center rounded-full bg-brand-700 px-5 text-sm font-semibold text-white">{action}</a>
+      <a href={href} class="mt-5 flex h-11 items-center rounded-xl bg-brand-700 px-5 text-sm font-semibold text-white">{action}</a>
     </div>
   );
   if (buy) {
@@ -512,7 +512,7 @@ export default function CheckoutView() {
           <button
             type="submit"
             disabled={sending || belowMinimum}
-            class="flex h-13 w-full items-center justify-between gap-3 rounded-full bg-brand-700 px-5 py-3.5 font-semibold text-white hover:bg-brand-800 disabled:opacity-70"
+            class="flex h-13 w-full items-center justify-between gap-3 rounded-xl bg-brand-700 px-5 py-3.5 font-semibold text-white hover:bg-brand-800 disabled:opacity-70"
           >
             <span class="flex items-center gap-2">
               {sending || waiting ? 'Placing your order…' : (
