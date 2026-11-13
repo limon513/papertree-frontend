@@ -1,4 +1,5 @@
 ---
+import TagBadge from '@/components/TagBadge.astro';
 import type { ListParams } from '@/lib/listing';
 import type { ProductList } from '@/lib/types';
 
@@ -34,6 +35,26 @@ const box = 'flex cursor-pointer items-center gap-2.5 rounded-lg px-1 py-1.5 tex
                 <input type="checkbox" name="brand" value={b.slug} checked={params.brand.includes(b.slug)} class="size-[18px] accent-brand-700" />
                 <span class="flex-1">{b.name}</span>
                 <span class="text-xs text-zinc-400 tabular-nums">{b.count}</span>
+              </label>
+            </li>
+          ))}
+        </ul>
+      </fieldset>
+    )
+  }
+  {
+    (facets.tags?.length ?? 0) > 0 && (
+      <fieldset class={section}>
+        <legend class="mb-2 text-sm font-semibold text-zinc-900">Tags</legend>
+        <ul class="space-y-0.5">
+          {facets.tags!.map((t) => (
+            <li>
+              <label class={box}>
+                <input type="checkbox" name="tag" value={t.slug} checked={params.tag.includes(t.slug)} class="size-[18px] accent-brand-700" />
+                <span class="flex-1">
+                  <TagBadge name={t.name} color={t.color} class="text-[11px]" />
+                </span>
+                <span class="text-xs text-zinc-400 tabular-nums">{t.count}</span>
               </label>
             </li>
           ))}

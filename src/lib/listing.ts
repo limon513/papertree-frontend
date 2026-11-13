@@ -1,7 +1,7 @@
 import type { ProductList } from './types';
 
 /** Filters and sort that list pages understand, as they appear in the address. */
-export const FILTER_KEYS = ['brand', 'min', 'max', 'inStock', 'onSale'] as const;
+export const FILTER_KEYS = ['brand', 'tag', 'min', 'max', 'inStock', 'onSale'] as const;
 
 export const SORT_OPTIONS = [
   { value: 'popular', label: 'Popular' },
@@ -33,8 +33,13 @@ export function listParams(q: URLSearchParams) {
     .getAll('brand')
     .flatMap((b) => b.split(','))
     .filter((b) => /^[a-z0-9-]{1,120}$/.test(b));
+  const tag = q
+    .getAll('tag')
+    .flatMap((t) => t.split(','))
+    .filter((t) => /^[a-z0-9-]{1,120}$/.test(t));
   return {
     brand: [...new Set(brand)],
+    tag: [...new Set(tag)],
     sort: sort && SORTS.includes(sort) ? sort : undefined,
     min,
     max,
@@ -72,6 +77,8 @@ export function activeChips(path: string, params: ListParams, facets: ProductLis
   if (!hide.includes('brand'))
     for (const slug of params.brand)
       chips.push({ label: facets.brands.find((b) => b.slug === slug)?.name ?? slug, href: hrefWith(path, params, { brand: params.brand.filter((b) => b !== slug) }) });
+  for (const slug of params.tag)
+    chips.push({ label: facets.tags?.find((t) => t.slug === slug)?.name ?? slug, href: hrefWith(path, params, { tag: params.tag.filter((t) => t !== slug) }) });
   if (params.min || params.max)
     chips.push({ label: `৳${params.min ?? '0'} – ${params.max ? `৳${params.max}` : 'any'}`, href: hrefWith(path, params, { min: null, max: null }) });
   if (params.inStock) chips.push({ label: 'In stock', href: hrefWith(path, params, { inStock: null }) });

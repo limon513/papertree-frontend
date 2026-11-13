@@ -1,0 +1,13 @@
+---
+import { tagClass } from '@/lib/utils';
+
+/** A product tag ("Overseas") as a small coloured badge. */
+interface Props {
+  name: string;
+  color: string;
+  class?: string;
+}
+const { name, color, class: className } = Astro.props;
+---
+
+<span class:list={['inline-flex items-center rounded px-1.5 py-0.5 text-[10px] leading-tight font-bold tracking-wide uppercase', tagClass(color), className]}>{name}</span>

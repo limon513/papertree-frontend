@@ -1,4 +1,5 @@
 ---
+import TagBadge from '@/components/TagBadge.astro';
 import { ChevronRight, ShieldCheck, Wallet } from 'lucide-preact';
 import Layout from '@/layouts/Layout.astro';
 import Gallery from '@/components/product/Gallery.astro';
@@ -79,7 +80,14 @@ Astro.response.headers.set('cache-control', 'public, max-age=0, s-maxage=60, sta
       <Gallery pictures={pictures} name={product.name} start={start} />
 
       <div>
-        {product.brand && <a href={links.brand(product.brand.slug)} class="text-xs font-semibold tracking-wide text-brand-700 uppercase hover:underline">{product.brand.name}</a>}
+        <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
+          {product.brand && <a href={links.brand(product.brand.slug)} class="text-xs font-semibold tracking-wide text-brand-700 uppercase hover:underline">{product.brand.name}</a>}
+          {product.labels?.map((t) => (
+            <a href={`/shop/?tag=${t.slug}`} class="hover:opacity-80" title={`More ${t.name} products`}>
+              <TagBadge name={t.name} color={t.color} class="text-[11px]" />
+            </a>
+          ))}
+        </div>
         <h1 class="mt-1 font-display text-2xl leading-tight font-bold tracking-tight text-zinc-900 sm:text-3xl">{product.name}</h1>
         {product.shortDescription && <p class="mt-3 text-[15px] whitespace-pre-line text-zinc-600">{product.shortDescription}</p>}
 
