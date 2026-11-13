@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'preact/hooks';
-import { Check, MapPin, Minus, Plus, ShoppingBag, Truck } from 'lucide-preact';
+import { Building2, Check, MapPin, Minus, Plus, ShoppingBag, Truck } from 'lucide-preact';
+import { useMe } from '@/lib/account';
+import { useWholesaleVariants } from '@/lib/wholesale';
 import { cart, panel, useCart, type CartItem } from '@/lib/cart';
 import type { CartCheck, Img } from '@/lib/types';
 import { API_PUBLIC_URL, cn, money, percentOff } from '@/lib/utils';
@@ -28,6 +30,8 @@ interface Props {
   variants: BuyVariant[];
   /** The variant shown first (from ?variant=, else the first in stock). */
   startId: number;
+  /** Businesses pay less: shoppers who are not one see how to become one. */
+  hasWholesale?: boolean;
   /**
    * Inside the "choose options" window: the buttons are not pinned to the screen, the page address
    * is left alone, and the window shows the option's picture and closes after adding.
@@ -42,8 +46,17 @@ const sameValues = (a: (string | null)[], b: (string | null)[]) => a.every((x, i
  * delivery charge for the shopper's area. The chosen option goes into the address (?variant=),
  * so a shared link opens on it.
  */
-export default function BuyBox({ productId, slug, name, options, variants, startId, inWindow }: Props) {
+export default function BuyBox({ productId, slug, name, options, variants: retail, startId, hasWholesale, inWindow }: Props) {
   const s = useCart();
+  const m = useMe();
+  // A signed-in approved business sees (and pays) its wholesale prices.
+  const wholesale = useWholesaleVariants(retail.map((v) => v.id));
+  const variants = wholesale
+    ? retail.map((v) => {
+        const w = wholesale.get(v.id);
+        return w ? { ...v, price: w.price, regularPrice: w.regularPrice, saleEndsAt: null } : v;
+      })
+    : retail;
   const start = variants.find((v) => v.id === startId) ?? variants[0]!;
   const [values, setValues] = useState(start.values);
   const [quantity, setQuantity] = useState(1);
@@ -117,6 +130,8 @@ export default function BuyBox({ productId, slug, name, options, variants, start
       try {
         const res = await fetch(`${API_PUBLIC_URL}/v1/store/cart`, {
           method: 'POST',
+          // A business has its own delivery terms.
+          credentials: 'include',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ items, districtId: deliverTo.districtId, areaId: deliverTo.areaId }),
           signal: controller.signal,
@@ -133,12 +148,15 @@ export default function BuyBox({ productId, slug, name, options, variants, start
   }, [quoteKey]);
 
   const off = variant ? percentOff(variant.price, variant.regularPrice) : 0;
+  // The business pays less than the shop price for this option.
+  const cheaper = !!variant && wholesale?.get(variant.id)?.regularPrice != null;
 
   return (
     <div>
       {/* Price */}
+      {cheaper && <p class="mt-3 text-xs font-semibold tracking-wide text-brand-700 uppercase">Your wholesale price</p>}
       {variant ? (
-        <div class="mt-3 flex flex-wrap items-baseline gap-x-2.5">
+        <div class={cn('flex flex-wrap items-baseline gap-x-2.5', cheaper ? 'mt-0.5' : 'mt-3')}>
           <span class="text-3xl font-bold text-zinc-900 tabular-nums">{money(variant.price)}</span>
           {off > 0 && (
             <>
@@ -149,6 +167,21 @@ export default function BuyBox({ productId, slug, name, options, variants, start
         </div>
       ) : (
         <p class="mt-3 text-zinc-500">This combination is not sold.</p>
+      )}
+      {hasWholesale && !inWindow && m !== undefined && !m?.business && (
+        <p class="mt-2 flex items-start gap-1.5 text-sm text-zinc-600">
+          <Building2 class="mt-0.5 size-4 shrink-0 text-brand-700" />
+          {m?.businessRequest?.status === 'pending' ? (
+            <span>Wholesale price for businesses: yours switches on when we approve your business account.</span>
+          ) : (
+            <span>
+              Lower wholesale price for shops, schools and offices.{' '}
+              <a href="/account/?business" class="font-semibold text-brand-700 hover:underline">
+                Ask for a business account
+              </a>
+            </span>
+          )}
+        </p>
       )}
       {variant?.saleEndsAt && off > 0 && (
         <p class="mt-1 text-sm text-marigold-700">Sale ends {new Date(variant.saleEndsAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}</p>

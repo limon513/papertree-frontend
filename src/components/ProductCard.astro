@@ -27,7 +27,7 @@ const more = p.image && p.moreImages?.length ? [imageAt(p.image, 400), ...p.more
 const href = links.product(p.slug);
 ---
 
-<div class="group flex h-full flex-col rounded-2xl bg-white p-2.5 ring-1 ring-zinc-200/80 transition duration-200 hover:shadow-lg hover:shadow-zinc-900/5 hover:ring-zinc-300 sm:p-3">
+<div data-card={p.id} class="group flex h-full flex-col rounded-2xl bg-white p-2.5 ring-1 ring-zinc-200/80 transition duration-200 hover:shadow-lg hover:shadow-zinc-900/5 hover:ring-zinc-300 sm:p-3">
   <a href={href} class="relative block aspect-square overflow-hidden rounded-xl bg-zinc-50" data-pics={more ? JSON.stringify(more) : undefined}>
     {
       p.image && (
@@ -45,7 +45,7 @@ const href = links.product(p.slug);
         />
       )
     }
-    {off >= 5 && <span class="absolute top-2 left-2 rounded-md bg-marigold-300 px-1.5 py-0.5 text-[11px] font-bold text-zinc-900">−{off}%</span>}
+    {off >= 5 && <span data-off class="absolute top-2 left-2 rounded-md bg-marigold-300 px-1.5 py-0.5 text-[11px] font-bold text-zinc-900">−{off}%</span>}
     {
       more && (
         <span class="pointer-events-none absolute inset-x-3 bottom-2 hidden gap-1 group-hover:flex" aria-hidden="true">
@@ -61,8 +61,9 @@ const href = links.product(p.slug);
     <a href={href} class="mt-0.5 line-clamp-2 min-h-[2.5rem] text-sm leading-5 text-zinc-800 hover:text-brand-700">{p.name}</a>
     <div class="mt-1.5 flex flex-wrap items-baseline gap-x-1.5">
       {p.variantCount > 1 && <span class="text-xs text-zinc-500">from</span>}
-      <span class="text-[15px] font-semibold text-zinc-900 tabular-nums">{money(p.price)}</span>
-      {off > 0 && <span class="text-xs text-zinc-400 tabular-nums line-through">{money(p.regularPrice!)}</span>}
+      <span data-price class="text-[15px] font-semibold text-zinc-900 tabular-nums">{money(p.price)}</span>
+      <span data-was hidden={off <= 0} class="text-xs text-zinc-400 tabular-nums line-through">{off > 0 ? money(p.regularPrice!) : ''}</span>
+      <span data-ws hidden class="rounded bg-brand-50 px-1 text-[10px] font-bold tracking-wide text-brand-700 uppercase">Wholesale</span>
     </div>
     <span class="mt-0.5 h-4 text-xs text-marigold-700">{p.lowStock ? `Only ${p.lowStock} left` : p.variantCount > 1 ? `${p.variantCount} options` : ''}</span>
     {

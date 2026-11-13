@@ -160,6 +160,8 @@ export interface ProductVariant {
 
 export interface Product {
   id: number;
+  /** Businesses pay less (the price is only for approved business accounts). */
+  hasWholesale?: boolean;
   slug: string;
   name: string;
   shortDescription: string | null;
@@ -225,6 +227,17 @@ export interface CartCheck {
     fee: number | null;
     freeAbove: number | null;
     toFree: number | null;
+    /** Why the charge is what it is (business accounts: "Free delivery for wholesale orders"). */
+    note?: string | null;
+  } | null;
+  /** A signed-in approved business: wholesale prices and its terms (null: retail). */
+  wholesale?: {
+    advancePercent: number;
+    minOrderAmount: number | null;
+    /** How much more to reach the minimum order (null: reached or none). */
+    short: number | null;
+    /** The shop's wholesale terms text. */
+    terms: string | null;
   } | null;
 }
 
