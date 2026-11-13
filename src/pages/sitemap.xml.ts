@@ -25,7 +25,7 @@ export const GET: APIRoute = async () => {
   const body = [
     '<?xml version="1.0" encoding="UTF-8"?>',
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
-    ...['/', '/shop/', '/categories/', '/brands/', '/deals/', '/new/'].map((p) => url(p)),
+    ...['/', '/shop/', '/categories/', '/brands/', '/deals/', '/new/', '/wholesale/'].map((p) => url(p)),
     ...data.categories.map((c) => url(links.category(c.path.split('/')))),
     ...data.brands.map((b) => url(links.brand(b.slug), b.updatedAt)),
     ...(data.pages ?? []).map((p) => url(`/${p.slug}/`, p.updatedAt)),

@@ -1,5 +1,5 @@
 ---
-import { ChevronRight, Sparkles } from 'lucide-preact';
+import { BadgeCheck, Building2, ChevronRight, Sparkles, Tag } from 'lucide-preact';
 import Layout from '@/layouts/Layout.astro';
 import { getCatalog } from '@/lib/api';
 import { iconUrl, links } from '@/lib/utils';
@@ -11,6 +11,23 @@ Astro.response.headers.set('cache-control', 'public, max-age=0, s-maxage=300, st
 <Layout title="All categories" description="Paper, notebooks, pens, art and craft, office and school supplies: every category at PaperTree.">
   <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
     <h1 class="font-display text-2xl font-bold tracking-tight sm:text-3xl">All categories</h1>
+    <!-- Quick links (on phones the top menu is hidden, so these live here too). -->
+    <ul class="mt-4 flex flex-wrap gap-2" aria-label="More ways to shop">
+      {
+        [
+          { href: '/deals/', label: 'Deals', Icon: Tag, tone: 'bg-marigold-100 text-zinc-900 hover:bg-marigold-200' },
+          { href: '/new/', label: 'New arrivals', Icon: Sparkles, tone: 'bg-zinc-100 text-zinc-800 hover:bg-zinc-200' },
+          { href: '/brands/', label: 'Brands', Icon: BadgeCheck, tone: 'bg-zinc-100 text-zinc-800 hover:bg-zinc-200' },
+          { href: '/wholesale/', label: 'Wholesale for businesses', Icon: Building2, tone: 'bg-brand-50 text-brand-800 hover:bg-brand-100' },
+        ].map(({ href, label, Icon, tone }) => (
+          <li>
+            <a href={href} class:list={['flex h-10 items-center gap-1.5 rounded-full px-4 text-sm font-semibold', tone]}>
+              <Icon class="size-4" /> {label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
     <ul class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {
         categories.map((c) => (

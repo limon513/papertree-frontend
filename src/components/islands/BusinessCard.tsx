@@ -88,6 +88,9 @@ export function BusinessCard({ m }: { m: Me }) {
           <button type="button" onClick={() => setOpen(true)} class="mt-3 flex h-10 items-center rounded-full bg-brand-50 px-4 text-sm font-semibold text-brand-800 hover:bg-brand-100">
             Ask for wholesale prices
           </button>
+          <a href="/wholesale/" class="mt-2 inline-block text-sm font-medium text-brand-700 hover:underline">
+            How wholesale works
+          </a>
         </>
       ) : (
         <form onSubmit={submit} noValidate class="mt-3 space-y-3">
