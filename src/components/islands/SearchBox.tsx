@@ -1,6 +1,8 @@
 import { useEffect, useId, useRef, useState } from 'preact/hooks';
 import { ArrowRight, Loader2, Search, X } from 'lucide-preact';
 import type { Suggestions } from '@/lib/types';
+import { useMe } from '@/lib/account';
+import { wholesalePrices, type WholesalePrice } from '@/lib/wholesale';
 import { API_PUBLIC_URL, cn, iconUrl, imageAt, links, money } from '@/lib/utils';
 
 /** The big search box: suggestions as you type, Enter for all results. */
@@ -53,6 +55,19 @@ export default function SearchBox({ className, initial = '', autoFocus = false }
 
   const result = data && data.q === query ? data.result : null;
   const products = result?.products ?? [];
+
+  // A signed-in approved business sees its wholesale prices here too.
+  const m = useMe();
+  const [wholesale, setWholesale] = useState<Map<number, WholesalePrice>>(new Map());
+  const ids = products.map((p) => p.id).join(',');
+  useEffect(() => {
+    if (!m?.business || !ids) return;
+    let live = true;
+    void wholesalePrices({ products: ids.split(',').map(Number) }).then((r) => live && setWholesale((old) => new Map([...old, ...r.products])));
+    return () => {
+      live = false;
+    };
+  }, [m?.business, ids]);
   const go = (href: string) => {
     setOpen(false);
     location.href = href;
@@ -149,7 +164,7 @@ export default function SearchBox({ className, initial = '', autoFocus = false }
                         {!p.inStock && ' · out of stock'}
                       </span>
                     </span>
-                    <span class="text-sm font-semibold text-zinc-900 tabular-nums">{money(p.price)}</span>
+                    <span class="text-sm font-semibold text-zinc-900 tabular-nums">{money(wholesale.get(p.id)?.price ?? p.price)}</span>
                   </a>
                 </li>
               ))}

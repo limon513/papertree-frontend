@@ -1,5 +1,8 @@
 import { effect } from '@preact/signals';
+import { loadMe, me } from '@/lib/account';
 import { cart, cartState, loadSaved, type CartItem } from '@/lib/cart';
+import { money } from '@/lib/utils';
+import { wholesalePrices } from '@/lib/wholesale';
 
 /**
  * Every product card on the page, run by this one small script (no app per card):
@@ -52,6 +55,34 @@ effect(() => {
     }
   }
 });
+
+// ---- Wholesale prices (a signed-in approved business) ----
+
+/** Swaps in the business's prices on every card not done yet (the shop answers only for a business). */
+async function wholesaleCards() {
+  const cards = [...document.querySelectorAll<HTMLElement>('[data-card]:not([data-ws-done])')];
+  if (!cards.length) return;
+  const { products } = await wholesalePrices({ products: cards.map((c) => Number(c.dataset.card)) });
+  for (const card of cards) {
+    const w = products.get(Number(card.dataset.card));
+    if (!w) continue;
+    card.dataset.wsDone = '';
+    card.querySelector('[data-price]')!.textContent = money(w.price);
+    const was = card.querySelector<HTMLElement>('[data-was]')!;
+    was.hidden = w.regularPrice === null;
+    was.textContent = w.regularPrice === null ? '' : money(w.regularPrice);
+    // Only marked when it is lower than the shop price.
+    if (w.regularPrice !== null) card.querySelector<HTMLElement>('[data-off]')?.remove();
+    card.querySelector<HTMLElement>('[data-ws]')!.hidden = w.regularPrice === null;
+    // What goes into the cart from this card.
+    const box = card.querySelector<Box>('[data-item]');
+    if (box) box._item = { ...itemOf(box), price: w.price, regularPrice: w.regularPrice };
+  }
+}
+effect(() => {
+  if (me.value?.business) void wholesaleCards();
+});
+void loadMe();
 
 // ---- Picture on hover (mouse only) ----
 type Pics = HTMLElement & { _pics?: string[]; _at?: number; _orig?: { src: string; srcset: string }; _warm?: boolean };

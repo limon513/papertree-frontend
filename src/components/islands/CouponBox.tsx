@@ -21,6 +21,8 @@ export function CouponBox({ check, checking, className }: { check: CartCheck | n
   const [typed, setTyped] = useState('');
   const [error, setError] = useState<string | null>(null);
   const answer = s.coupon && check?.coupon?.code === s.coupon ? check.coupon : null;
+  // Business accounts: wholesale prices instead of coupons.
+  if (check?.wholesale) return null;
 
   if (!s.coupon && !open) {
     return (
