@@ -236,8 +236,12 @@ export interface CartCheck {
     minOrderAmount: number | null;
     /** How much more to reach the minimum order (null: reached or none). */
     short: number | null;
+    /** To pay before it is sent (null until the delivery charge is known). */
+    advance: number | null;
     /** The shop's wholesale terms text. */
     terms: string | null;
+    /** How to pay the advance (bKash / Nagad numbers). */
+    payAdvance: string | null;
   } | null;
 }
 
@@ -259,6 +263,13 @@ export interface CartCoupon {
 export interface PlacedOrder {
   number: number;
   status: string;
+  /** wholesale: a business order (advance first, the rest on delivery). */
+  type?: 'retail' | 'wholesale';
+  /** Wholesale: to pay before it is sent. */
+  advanceRequired?: number;
+  paidAmount?: number;
+  /** Wholesale: how to pay the advance. */
+  payAdvance?: string | null;
   createdAt: string;
   customerName: string;
   phone: string;

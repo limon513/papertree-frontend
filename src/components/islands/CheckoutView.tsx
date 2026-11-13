@@ -140,6 +140,10 @@ export default function CheckoutView() {
   const total = subtotal - cp.itemsOff + Math.max(0, (fee ?? 0) - cp.deliveryOff);
   // The total is known once the shop has priced the cart for this area.
   const priced = !!check && fee !== null && !checking;
+  // A signed-in approved business: wholesale prices and its terms (minimum order, advance).
+  const ws = check?.wholesale ?? null;
+  const advance = ws && ws.advancePercent > 0 && ws.advance !== null && ws.advance > 0 ? ws.advance : null;
+  const belowMinimum = !!ws && ws.short !== null;
 
   const place = async (e: Event) => {
     e.preventDefault();
@@ -155,6 +159,10 @@ export default function CheckoutView() {
     if (Object.keys(missing).length) {
       // After the page has drawn the red boxes: the cursor goes to the first one.
       requestAnimationFrame(() => document.querySelector<HTMLElement>('form [aria-invalid=true]')?.focus());
+      return;
+    }
+    if (belowMinimum) {
+      setProblem(`Wholesale orders start at ${money(ws!.minOrderAmount!)}. Please add ${money(ws!.short!)} more.`);
       return;
     }
     if (!priced) {
@@ -206,6 +214,9 @@ export default function CheckoutView() {
         // Only known once the phone number is in (e.g. already used): it comes off, the shopper sees the new total.
         setProblem(`${s.coupon ? `${s.coupon}: ` : ''}${error.message ?? 'This code cannot be used.'} The total is updated: tap “Place order” to order without it.`);
         cart.setCoupon(null);
+      } else if (error?.code === 'BELOW_MINIMUM') {
+        setProblem(error.message ?? 'This is below the minimum wholesale order.');
+        recheck();
       } else if (error?.code === 'PRICE_CHANGED' || Object.keys(fields).some((k) => k.startsWith('items.'))) {
         // Prices or stock changed: show the cart as it is now and let the shopper look before ordering.
         setProblem(error?.message ?? 'Something in your cart changed. Please check and place the order again.');
@@ -350,17 +361,44 @@ export default function CheckoutView() {
             <input type="radio" name="payment" checked readOnly class="size-4 accent-brand-700" />
             <Banknote class="size-5 text-brand-700" />
             <span class="flex-1">
-              <span class="block font-medium text-zinc-900">Cash on delivery</span>
-              <span class="block text-sm text-zinc-500">Pay when your order arrives</span>
+              {ws && ws.advancePercent > 0 ? (
+                <>
+                  <span class="block font-medium text-zinc-900">Advance, then cash on delivery</span>
+                  <span class="block text-sm text-zinc-500">
+                    Pay {advance !== null ? <strong class="text-zinc-800">{money(advance)}</strong> : 'a'} advance ({ws.advancePercent}%) first, the rest when it arrives
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span class="block font-medium text-zinc-900">Cash on delivery</span>
+                  <span class="block text-sm text-zinc-500">Pay when your order arrives</span>
+                </>
+              )}
             </span>
           </label>
+          {ws && ws.advancePercent > 0 && (
+            <div class="mt-3 rounded-xl bg-brand-50 px-3.5 py-3 text-sm text-brand-950">
+              <p class="font-medium">How to pay the advance</p>
+              {ws.payAdvance ? <p class="mt-1 whitespace-pre-line">{ws.payAdvance}</p> : <p class="mt-1">We call you with the payment details.</p>}
+              <p class="mt-1 text-brand-900/80">Use your order number as the reference. We send your order once the advance arrives.</p>
+            </div>
+          )}
+          {ws?.terms && (
+            <div class="mt-3 rounded-xl bg-zinc-50 px-3.5 py-3 text-sm text-zinc-700">
+              <p class="font-medium text-zinc-900">Wholesale terms</p>
+              <p class="mt-1 whitespace-pre-line">{ws.terms}</p>
+            </div>
+          )}
         </section>
       </div>
 
       {/* The order */}
       <aside class="rounded-2xl bg-white p-4 ring-1 ring-zinc-200 sm:p-5 lg:sticky lg:top-36" aria-label="Your order">
         <div class="flex items-center justify-between">
-          <h2 class="font-display text-lg font-bold">Your order ({rows.reduce((n, i) => n + i.quantity, 0)})</h2>
+          <h2 class="font-display text-lg font-bold">
+            Your order ({rows.reduce((n, i) => n + i.quantity, 0)})
+            {ws && <span class="ml-2 rounded bg-brand-50 px-1.5 py-0.5 align-middle text-[11px] font-bold tracking-wide text-brand-700 uppercase">Wholesale</span>}
+          </h2>
           {!buy && (
             <a href="/cart/" class="flex items-center gap-1 text-sm font-medium text-brand-700">
               <ArrowLeft class="size-4" /> Edit cart
@@ -427,6 +465,7 @@ export default function CheckoutView() {
             </dt>
             <dd class="font-medium tabular-nums">{!s.deliverTo ? <span class="text-zinc-400">Choose your area</span> : fee === null ? '…' : fee === 0 ? <span class="text-brand-700">Free</span> : money(fee)}</dd>
           </div>
+          {ws && s.deliverTo && check?.delivery?.note && <p class="-mt-1 text-right text-xs text-zinc-500">{check.delivery.note}</p>}
           <CouponRow code={s.coupon} off={cp.itemsOff + cp.deliveryOff} />
           <div class="flex items-baseline justify-between border-t border-zinc-100 pt-3">
             <dt class="font-semibold text-zinc-900">Total</dt>
@@ -434,7 +473,32 @@ export default function CheckoutView() {
               {money(total)}
             </dd>
           </div>
+          {advance !== null && priced && (
+            <>
+              <div class="flex justify-between text-brand-800">
+                <dt>Advance to pay now</dt>
+                <dd class="font-semibold tabular-nums">{money(advance)}</dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-zinc-600">On delivery</dt>
+                <dd class="font-medium tabular-nums">{money(Math.round((total - advance) * 100) / 100)}</dd>
+              </div>
+            </>
+          )}
         </dl>
+        {belowMinimum && (
+          <p class="mt-3 flex gap-2 rounded-xl bg-marigold-50 px-3 py-2.5 text-sm text-zinc-800 ring-1 ring-marigold-200" role="status">
+            <Info class="mt-0.5 size-4 shrink-0 text-marigold-700" />
+            <span>
+              Wholesale orders start at <strong>{money(ws!.minOrderAmount!)}</strong>. Add <strong>{money(ws!.short!)}</strong> more to order.{' '}
+              {!buy && (
+                <a href="/cart/" class="font-semibold text-brand-700 hover:underline">
+                  Back to cart
+                </a>
+              )}
+            </span>
+          </p>
+        )}
         <CouponBox check={check} checking={checking} className="mt-3" />
 
         {problem && (
@@ -447,7 +511,7 @@ export default function CheckoutView() {
         <div data-buy-bar class="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 border-t border-zinc-200 bg-white/95 p-3 backdrop-blur md:static md:mt-4 md:border-0 md:bg-transparent md:p-0">
           <button
             type="submit"
-            disabled={sending}
+            disabled={sending || belowMinimum}
             class="flex h-13 w-full items-center justify-between gap-3 rounded-full bg-brand-700 px-5 py-3.5 font-semibold text-white hover:bg-brand-800 disabled:opacity-70"
           >
             <span class="flex items-center gap-2">
@@ -461,7 +525,7 @@ export default function CheckoutView() {
           </button>
         </div>
         <p class="mt-3 flex items-center justify-center gap-1.5 text-xs text-zinc-500">
-          <Lock class="size-3.5" /> We call to confirm before sending. No advance payment.
+          <Lock class="size-3.5" /> {advance !== null ? 'We call to confirm, and send it once the advance arrives.' : 'We call to confirm before sending. No advance payment.'}
         </p>
       </aside>
     </form>
