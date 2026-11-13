@@ -1,5 +1,5 @@
 ---
-import { CheckCircle2, MessageCircle, Phone, Truck } from 'lucide-preact';
+import { CheckCircle2, MessageCircle, Phone, Truck, XCircle } from 'lucide-preact';
 import Layout from '@/layouts/Layout.astro';
 import { getCatalog, getOrder, NotFound } from '@/lib/api';
 import type { PlacedOrder } from '@/lib/types';
@@ -18,11 +18,14 @@ const { store } = await getCatalog();
 Astro.response.headers.set('cache-control', 'private, no-store');
 if (!order) Astro.response.status = 404;
 const firstName = order?.customerName.split(' ')[0];
+/** After staff move the order on, the page says where it is (the update emails link here). */
+const STATE: Record<string, string> = { confirmed: 'is confirmed', packed: 'is confirmed', shipped: 'is on the way', delivered: 'is delivered', cancelled: 'is cancelled', returned: 'was returned' };
+const moved = order && order.status !== 'pending' ? (STATE[order.status] ?? null) : null;
 const place = order ? [order.address, order.areaName, order.districtName].filter(Boolean).join(', ') : '';
 const whatsapp = order && store.whatsapp ? `https://wa.me/88${store.whatsapp}?text=${encodeURIComponent(`Hello PaperTree, about my order #${order.number}`)}` : null;
 ---
 
-<Layout title={order ? `Order #${order.number} placed` : 'Order not found'} noindex>
+<Layout title={order ? `Order #${order.number} ${moved ?? 'placed'}` : 'Order not found'} noindex>
   <div class="mx-auto max-w-2xl px-4 py-8 sm:px-6 sm:py-12">
     {
       !order ? (
@@ -33,30 +36,54 @@ const whatsapp = order && store.whatsapp ? `https://wa.me/88${store.whatsapp}?te
         </div>
       ) : (
         <>
-          <div class="text-center">
-            <CheckCircle2 class="mx-auto size-14 text-brand-600" />
-            <h1 class="mt-3 font-display text-2xl font-bold tracking-tight sm:text-3xl">Thank you, {firstName}!</h1>
-            <p class="mt-1 text-lg text-zinc-700">
-              Your order <strong class="text-zinc-900">#{order.number}</strong> is placed.
-            </p>
-          </div>
-
-          <ol class="mt-8 space-y-4 rounded-2xl bg-brand-50 p-5 text-sm text-brand-950">
-            <li class="flex gap-3">
-              <Phone class="mt-0.5 size-5 shrink-0 text-brand-700" />
-              <span>We will call you on <strong>{order.phone}</strong> soon to confirm.</span>
-            </li>
-            <li class="flex gap-3">
-              <Truck class="mt-0.5 size-5 shrink-0 text-brand-700" />
-              <span>
-                Then we send it to <strong>{place}</strong>{order.deliveryTime && <>, usually in <strong>{order.deliveryTime}</strong></>}.
-              </span>
-            </li>
-            <li class="flex gap-3">
-              <CheckCircle2 class="mt-0.5 size-5 shrink-0 text-brand-700" />
-              <span>Pay <strong>{money(order.total)}</strong> in cash when it arrives.</span>
-            </li>
-          </ol>
+          {moved ? (
+            <div class="text-center">
+              {order.status === 'shipped' ? <Truck class="mx-auto size-14 text-brand-600" /> : order.status === 'cancelled' || order.status === 'returned' ? <XCircle class="mx-auto size-14 text-zinc-400" /> : <CheckCircle2 class="mx-auto size-14 text-brand-600" />}
+              <h1 class="mt-3 font-display text-2xl font-bold tracking-tight sm:text-3xl">Your order #{order.number} {moved}</h1>
+              {(order.status === 'confirmed' || order.status === 'packed') && (
+                <p class="mt-2 text-zinc-700">
+                  We are getting it ready and will send it to <strong>{place}</strong>{order.deliveryTime && <>, usually in <strong>{order.deliveryTime}</strong></>}. Pay <strong>{money(order.total)}</strong> in cash when it arrives.
+                </p>
+              )}
+              {order.status === 'shipped' && (
+                <>
+                  <p class="mt-2 text-zinc-700">
+                    It is on the way to <strong>{place}</strong>{order.courier && <> with <strong>{order.courier}</strong></>}. Pay <strong>{money(order.total)}</strong> in cash when it arrives.
+                  </p>
+                  {order.trackingCode && <p class="mt-2 text-sm text-zinc-600">Tracking code: <strong class="font-mono text-zinc-900 select-all">{order.trackingCode}</strong></p>}
+                </>
+              )}
+              {order.status === 'delivered' && <p class="mt-2 text-zinc-700">Thank you for shopping with us, {firstName}! If anything is wrong, tell us and we will make it right.</p>}
+              {(order.status === 'cancelled' || order.status === 'returned') && <p class="mt-2 text-zinc-700">If this is a mistake, call or WhatsApp us and we will sort it out.</p>}
+            </div>
+          ) : (
+            <>
+            <div class="text-center">
+              <CheckCircle2 class="mx-auto size-14 text-brand-600" />
+              <h1 class="mt-3 font-display text-2xl font-bold tracking-tight sm:text-3xl">Thank you, {firstName}!</h1>
+              <p class="mt-1 text-lg text-zinc-700">
+                Your order <strong class="text-zinc-900">#{order.number}</strong> is placed.
+              </p>
+            </div>
+  
+            <ol class="mt-8 space-y-4 rounded-2xl bg-brand-50 p-5 text-sm text-brand-950">
+              <li class="flex gap-3">
+                <Phone class="mt-0.5 size-5 shrink-0 text-brand-700" />
+                <span>We will call you on <strong>{order.phone}</strong> soon to confirm.</span>
+              </li>
+              <li class="flex gap-3">
+                <Truck class="mt-0.5 size-5 shrink-0 text-brand-700" />
+                <span>
+                  Then we send it to <strong>{place}</strong>{order.deliveryTime && <>, usually in <strong>{order.deliveryTime}</strong></>}.
+                </span>
+              </li>
+              <li class="flex gap-3">
+                <CheckCircle2 class="mt-0.5 size-5 shrink-0 text-brand-700" />
+                <span>Pay <strong>{money(order.total)}</strong> in cash when it arrives.</span>
+              </li>
+            </ol>
+            </>
+          )}
 
           <section class="mt-8 rounded-2xl ring-1 ring-zinc-200">
             <h2 class="border-b border-zinc-100 px-5 py-3 font-display text-lg font-bold">Order #{order.number}</h2>
@@ -81,7 +108,7 @@ const whatsapp = order && store.whatsapp ? `https://wa.me/88${store.whatsapp}?te
               {order.bulkDiscount ? <p class="text-right text-xs text-brand-700">You saved {money(order.bulkDiscount)} with bulk discounts</p> : null}
               <div class="flex justify-between"><dt class="text-zinc-600">Delivery</dt><dd class="tabular-nums">{order.deliveryFee === 0 ? 'Free' : money(order.deliveryFee)}</dd></div>
               {order.couponDiscount ? <div class="flex justify-between text-brand-700"><dt>Coupon <span class="font-mono">{order.couponCode}</span></dt><dd class="tabular-nums">−{money(order.couponDiscount)}</dd></div> : null}
-              <div class="flex justify-between pt-1.5 text-base font-bold"><dt>Total (cash on delivery)</dt><dd class="tabular-nums">{money(order.total)}</dd></div>
+              <div class="flex justify-between pt-1.5 text-base font-bold"><dt>Total{order.paymentMethod === 'cod' ? ' (cash on delivery)' : ''}</dt><dd class="tabular-nums">{money(order.total)}</dd></div>
             </dl>
           </section>
 

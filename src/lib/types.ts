@@ -254,6 +254,9 @@ export interface PlacedOrder {
   districtName: string;
   deliveryTime: string | null;
   paymentMethod: string;
+  /** Once it is on the way. */
+  courier?: string | null;
+  trackingCode?: string | null;
   /** variantId: for "Order again" (null when the product was deleted). */
   items: { variantId?: number | null; bulkPercent?: number | null; name: string; variantLabel: string | null; quantity: number; unitPrice: number; lineTotal: number; image: Img | null }[];
   subtotal: number;
