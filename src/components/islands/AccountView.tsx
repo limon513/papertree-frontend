@@ -5,6 +5,7 @@ import { areasOf, loadPlaces } from '@/lib/places';
 import type { Img, Places, PlacedOrder } from '@/lib/types';
 import { cn, imageAt, money } from '@/lib/utils';
 import { Avatar } from './AccountButtons';
+import { BusinessCard } from './BusinessCard';
 
 interface OrderRow {
   number: number;
@@ -113,13 +114,15 @@ export default function AccountView() {
     scrollTo({ top: 0 });
   };
 
+  // From a "wholesale price for businesses" link: the business form opens after signing in.
+  const forBusiness = typeof location !== 'undefined' && new URLSearchParams(location.search).has('business');
   if (m === undefined) return <div class="mt-6 h-72 animate-pulse rounded-3xl bg-zinc-100" aria-busy="true" />;
 
   if (!m) {
     return (
       <div class="mx-auto mt-8 max-w-md rounded-3xl bg-zinc-50 px-6 py-12 text-center">
         <UserRound class="mx-auto size-10 text-zinc-400" />
-        <h2 class="mt-3 font-display text-xl font-bold">Sign in to see your orders</h2>
+        <h2 class="mt-3 font-display text-xl font-bold">{forBusiness ? 'Sign in to ask for wholesale prices' : 'Sign in to see your orders'}</h2>
         <p class="mt-1 text-sm text-zinc-500">With your phone number or Google. No password needed.</p>
         <button type="button" onClick={() => openSignIn()} class={cn(primary, 'mx-auto mt-5')}>
           Sign in
@@ -197,6 +200,7 @@ export default function AccountView() {
       </section>
 
       <Addresses m={m} />
+      <BusinessCard m={m} />
     </div>
   );
 }
