@@ -1,5 +1,6 @@
 ---
 import type { ProductCard } from '@/lib/types';
+import TagBadge from './TagBadge.astro';
 import { imageAt, links, money, percentOff, srcSet } from '@/lib/utils';
 
 /**
@@ -43,6 +44,15 @@ const href = links.product(p.slug);
           decoding="async"
           class:list={['size-full object-contain p-3 transition duration-300', !more && 'group-hover:scale-[1.04]', !p.inStock && 'opacity-50']}
         />
+      )
+    }
+    {
+      p.labels && p.labels.length > 0 && (
+        <span class="absolute top-2 right-2 flex max-w-[70%] flex-col items-end gap-1">
+          {p.labels.slice(0, 2).map((t) => (
+            <TagBadge name={t.name} color={t.color} />
+          ))}
+        </span>
       )
     }
     {off >= 5 && <span data-off class="absolute top-2 left-2 rounded-md bg-marigold-300 px-1.5 py-0.5 text-[11px] font-bold text-zinc-900">−{off}%</span>}

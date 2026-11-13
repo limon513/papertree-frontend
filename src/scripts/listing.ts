@@ -4,7 +4,7 @@
  * - Sheet (phones): ticks stay in the sheet and the button shows the live number of products; the list
  *   opens on "Show N products". Closing the sheet without that puts the ticks back as they were.
  */
-const FILTERS = ['brand', 'min', 'max', 'inStock', 'onSale', 'page'];
+const FILTERS = ['brand', 'tag', 'min', 'max', 'inStock', 'onSale', 'page'];
 const digits = (v: FormDataEntryValue | null) => String(v ?? '').replace(/\D/g, '').slice(0, 7);
 
 /** The filters chosen in a form, as address options. */
@@ -13,6 +13,8 @@ function chosen(form: HTMLFormElement) {
   const q = new URLSearchParams();
   const brands = data.getAll('brand').map(String);
   if (brands.length) q.set('brand', brands.join(','));
+  const tags = data.getAll('tag').map(String);
+  if (tags.length) q.set('tag', tags.join(','));
   let min = digits(data.get('min'));
   let max = digits(data.get('max'));
   if (min && max && Number(min) > Number(max)) [min, max] = [max, min];

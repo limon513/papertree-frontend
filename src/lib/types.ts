@@ -87,6 +87,15 @@ export interface ProductCard {
   /** "Only 3 left". */
   lowStock: number | null;
   isNew: boolean;
+  /** Tags shown on cards ("Overseas"). */
+  labels?: ProductTag[];
+}
+
+/** A product tag, shown as a coloured badge. */
+export interface ProductTag {
+  name: string;
+  slug: string;
+  color: string;
 }
 
 /** A home page banner (managed in the admin). */
@@ -126,6 +135,8 @@ export interface ProductList {
   } | null;
   facets: {
     brands: { slug: string; name: string; count: number }[];
+    /** Product tags with how many products in this list have them. */
+    tags?: { slug: string; name: string; color: string; count: number }[];
     price: { min: number; max: number } | null;
   };
   /** Set when searching (q). */
@@ -162,6 +173,8 @@ export interface ProductVariant {
 
 export interface Product {
   id: number;
+  /** Its tags ("Overseas"), all of them. */
+  labels?: ProductTag[];
   /** Businesses pay less (the price is only for approved business accounts). */
   hasWholesale?: boolean;
   slug: string;

@@ -41,3 +41,16 @@ export const links = {
   category: (path: string[]) => `/product-category/${path.join('/')}/`,
   brand: (slug: string) => `/brand/${slug}/`,
 };
+
+/** Product tag colours (the admin's colour names), as badge styles. */
+const TAG_STYLES: Record<string, string> = {
+  green: 'bg-emerald-100 text-emerald-800',
+  blue: 'bg-sky-100 text-sky-800',
+  amber: 'bg-amber-100 text-amber-900',
+  red: 'bg-red-100 text-red-800',
+  purple: 'bg-violet-100 text-violet-800',
+  pink: 'bg-pink-100 text-pink-800',
+  gray: 'bg-zinc-100 text-zinc-700',
+  black: 'bg-zinc-900 text-white',
+};
+export const tagClass = (color: string) => TAG_STYLES[color] ?? TAG_STYLES.gray!;
