@@ -6,6 +6,7 @@ import type { Img, Places, PlacedOrder } from '@/lib/types';
 import { cn, imageAt, money } from '@/lib/utils';
 import { Avatar } from './AccountButtons';
 import { BusinessCard } from './BusinessCard';
+import { ParcelCard } from './TrackOrder';
 
 interface OrderRow {
   number: number;
@@ -602,13 +603,12 @@ function OrderView({ number, back }: { number: number; back: () => void }) {
         <p class="mt-1 text-zinc-700">{order.customerName} · {order.phone}</p>
         <p class="text-zinc-700">{place}</p>
         {order.deliveryTime && <p class="mt-1 text-zinc-500">Usually arrives in {order.deliveryTime}.</p>}
-        {order.status === 'shipped' && (order.courier || order.trackingCode) && (
-          <p class="mt-2 text-zinc-700">
-            On the way{order.courier && <> with <strong>{order.courier}</strong></>}
-            {order.trackingCode && <>, tracking code <strong class="font-mono select-all">{order.trackingCode}</strong></>}
-          </p>
-        )}
       </section>
+      {(order.status === 'shipped' || order.status === 'delivered') && (
+        <div class="mt-4">
+          <ParcelCard order={{ courier: order.courier ?? null, trackingCode: order.trackingCode ?? null, trackingUrl: order.trackingUrl ?? null, parcelStatus: order.parcelStatus ?? null, journey: order.journey ?? [] }} />
+        </div>
+      )}
     </div>
   );
 }
