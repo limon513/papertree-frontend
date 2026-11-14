@@ -43,6 +43,7 @@ const social = Object.entries(store.social).filter((e): e is [keyof typeof SOCIA
         <li><a href="/new/" class="hover:text-white">New arrivals</a></li>
         <li><a href="/brands/" class="hover:text-white">All brands</a></li>
         <li><a href="/wholesale/" class="hover:text-white">Wholesale for businesses</a></li>
+        <li><a href="/track-order/" class="hover:text-white">Track your order</a></li>
         <li><a href="/shop/" class="hover:text-white">All products</a></li>
         {(pages ?? []).map((p) => <li><a href={`/${p.slug}/`} class="hover:text-white">{p.title}</a></li>)}
       </ul>

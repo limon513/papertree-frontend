@@ -1,6 +1,7 @@
 ---
 import { Banknote, CheckCircle2, MessageCircle, Phone, Truck, XCircle } from 'lucide-preact';
 import Layout from '@/layouts/Layout.astro';
+import { ParcelCard } from '@/components/islands/TrackOrder';
 import { getCatalog, getOrder, NotFound } from '@/lib/api';
 import type { PlacedOrder } from '@/lib/types';
 import { imageAt, money } from '@/lib/utils';
@@ -57,7 +58,6 @@ const whatsapp = order && store.whatsapp ? `https://wa.me/88${store.whatsapp}?te
                   <p class="mt-2 text-zinc-700">
                     It is on the way to <strong>{place}</strong>{order.courier && <> with <strong>{order.courier}</strong></>}. {payLine ?? <>Pay <strong>{money(due)}</strong> in cash when it arrives.</>}
                   </p>
-                  {order.trackingCode && <p class="mt-2 text-sm text-zinc-600">Tracking code: <strong class="font-mono text-zinc-900 select-all">{order.trackingCode}</strong></p>}
                 </>
               )}
               {order.status === 'delivered' && <p class="mt-2 text-zinc-700">Thank you for shopping with us, {firstName}! If anything is wrong, tell us and we will make it right.</p>}
@@ -100,6 +100,12 @@ const whatsapp = order && store.whatsapp ? `https://wa.me/88${store.whatsapp}?te
             </ol>
             </>
           )}
+
+          {(order.status === 'shipped' || order.status === 'delivered') && (order.courier || order.trackingCode || order.journey?.length) ? (
+            <div class="mt-6 text-left">
+              <ParcelCard order={{ courier: order.courier ?? null, trackingCode: order.trackingCode ?? null, trackingUrl: order.trackingUrl ?? null, parcelStatus: order.parcelStatus ?? null, journey: order.journey ?? [] }} />
+            </div>
+          ) : null}
 
           <section class="mt-8 rounded-2xl ring-1 ring-zinc-200">
             <h2 class="border-b border-zinc-100 px-5 py-3 font-display text-lg font-bold">Order #{order.number}</h2>

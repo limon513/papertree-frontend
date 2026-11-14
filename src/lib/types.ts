@@ -296,6 +296,12 @@ export interface PlacedOrder {
   /** Once it is on the way. */
   courier?: string | null;
   trackingCode?: string | null;
+  /** The courier's own tracking page. */
+  trackingUrl?: string | null;
+  /** Where the parcel is, in words (null before it is handed over). */
+  parcelStatus?: string | null;
+  /** The parcel's journey, newest first. */
+  journey?: ParcelStep[];
   /** variantId: for "Order again" (null when the product was deleted). */
   items: { variantId?: number | null; bulkPercent?: number | null; name: string; variantLabel: string | null; quantity: number; unitPrice: number; lineTotal: number; image: Img | null }[];
   subtotal: number;
@@ -306,4 +312,31 @@ export interface PlacedOrder {
   couponDiscount?: number;
   deliveryFee: number;
   total: number;
+}
+
+/** One step of a parcel's journey (the courier's words). */
+export interface ParcelStep {
+  text: string;
+  at: string | null;
+}
+
+/** An order as "Track your order" shows it (no address or items). */
+export interface TrackedOrder {
+  number: number;
+  status: string;
+  type: 'retail' | 'wholesale';
+  placedAt: string;
+  confirmedAt: string | null;
+  shippedAt: string | null;
+  deliveredAt: string | null;
+  cancelledAt: string | null;
+  place: string;
+  itemCount: number;
+  total: number;
+  due: number;
+  courier: string | null;
+  trackingCode: string | null;
+  trackingUrl: string | null;
+  parcelStatus: string | null;
+  journey: ParcelStep[];
 }
