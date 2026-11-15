@@ -1,0 +1,16 @@
+---
+import WishlistView from '@/components/islands/WishlistView';
+import Layout from '@/layouts/Layout.astro';
+
+/** The customer's saved products. Personal, so it stays out of Google. */
+Astro.response.headers.set('cache-control', 'public, max-age=0, s-maxage=300, stale-while-revalidate=600');
+---
+
+<Layout title="Your wishlist" noindex>
+  <div class="mx-auto max-w-site px-4 py-8 sm:px-6 sm:py-12">
+    <h1 class="font-display text-3xl font-bold tracking-tight text-zinc-900">Your wishlist</h1>
+    <div class="mt-6">
+      <WishlistView client:load />
+    </div>
+  </div>
+</Layout>

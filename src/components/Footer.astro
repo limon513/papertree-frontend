@@ -1,27 +1,63 @@
 ---
-import { Clock, Mail, MapPin, Phone } from 'lucide-preact';
+import { Clock, Mail, MapPin, MessageCircle, Phone, Truck } from 'lucide-preact';
 import type { Catalog } from '@/lib/types';
-import { links } from '@/lib/utils';
+import { imageAt, links } from '@/lib/utils';
 
+/**
+ * Site footer. Phones: the shop first, then Shop and Help side by side, then contact. Computers: four
+ * columns. Under it the payment methods (the SSLCommerz "Pay with" strip) and the copyright line.
+ */
 interface Props {
   catalog: Catalog;
 }
 const { store, categories, pages } = Astro.props.catalog;
 const SOCIAL_LABELS = { facebook: 'Facebook', instagram: 'Instagram', youtube: 'YouTube', tiktok: 'TikTok' } as const;
 const social = Object.entries(store.social).filter((e): e is [keyof typeof SOCIAL_LABELS, string] => !!e[1]);
+const whatsapp = store.whatsapp ? `https://wa.me/88${store.whatsapp}` : null;
+const heading = 'text-xs font-semibold tracking-[0.15em] text-white uppercase';
+const link = 'text-brand-100/90 transition-colors hover:text-white';
 ---
 
-<footer class="mt-12 bg-brand-950 text-brand-100">
-  <div class="mx-auto grid max-w-site gap-8 px-4 py-10 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
-    <div>
-      <div class="font-display text-xl font-bold text-white uppercase">{store.name}</div>
-      {store.tagline && <p class="mt-2 text-sm text-brand-200">{store.tagline}</p>}
+<footer class="mt-12 bg-brand-950 text-sm text-brand-100">
+  <div class="mx-auto grid max-w-site gap-x-8 gap-y-9 px-4 pt-10 pb-8 sm:px-6 lg:grid-cols-[1.5fr_1fr_1fr_1.4fr] lg:pt-14 lg:pb-12">
+    <!-- The shop -->
+    <div class="max-w-sm">
+      <a href="/" class="flex items-center gap-3" aria-label={`${store.name} home`}>
+        {
+          store.logo && (
+            <span class="flex size-12 shrink-0 items-center justify-center rounded-xl bg-white p-1.5">
+              <img src={imageAt(store.logo, 160)} alt="" width={store.logo.width} height={store.logo.height} loading="lazy" class="max-h-full w-auto" />
+            </span>
+          )
+        }
+        <span class="leading-none">
+          <span class="block font-display text-xl font-bold tracking-tight text-white uppercase">{store.name}</span>
+          <span class="mt-1 block text-[10px] font-medium tracking-[0.3em] text-brand-300 uppercase">Bangladesh</span>
+        </span>
+      </a>
+      {store.tagline && <p class="mt-4 leading-relaxed text-brand-200">{store.tagline}</p>}
+      {
+        (store.phone || whatsapp) && (
+          <div class="mt-5 flex flex-wrap gap-2">
+            {store.phone && (
+              <a href={`tel:${store.phone}`} class="flex h-10 items-center gap-2 rounded-xl bg-white/10 px-3.5 font-semibold text-white hover:bg-white/15">
+                <Phone class="size-4 text-brand-300" /> {store.phone}
+              </a>
+            )}
+            {whatsapp && (
+              <a href={whatsapp} target="_blank" rel="noopener noreferrer" class="flex h-10 items-center gap-2 rounded-xl bg-white/10 px-3.5 font-semibold text-white hover:bg-white/15">
+                <MessageCircle class="size-4 text-brand-300" /> WhatsApp
+              </a>
+            )}
+          </div>
+        )
+      }
       {
         social.length > 0 && (
-          <ul class="mt-4 flex flex-wrap gap-2">
+          <ul class="mt-4 flex flex-wrap gap-2" aria-label="Follow us">
             {social.map(([key, url]) => (
               <li>
-                <a href={url} target="_blank" rel="noopener noreferrer" class="rounded-full bg-white/10 px-3 py-1.5 text-sm hover:bg-white/20">
+                <a href={url} target="_blank" rel="noopener noreferrer" class="block rounded-full px-3 py-1.5 text-xs font-medium text-brand-100 ring-1 ring-white/15 hover:bg-white/10 hover:text-white">
                   {SOCIAL_LABELS[key]}
                 </a>
               </li>
@@ -30,66 +66,105 @@ const social = Object.entries(store.social).filter((e): e is [keyof typeof SOCIA
         )
       }
     </div>
-    <div>
-      <h2 class="text-sm font-semibold tracking-wide text-white uppercase">Shop</h2>
-      <ul class="mt-3 space-y-2 text-sm">
-        {categories.slice(0, 8).map((c) => <li><a href={links.category([c.slug])} class="hover:text-white">{c.name}</a></li>)}
-      </ul>
+
+    <!-- Shop and Help: side by side on phones, their own columns on computers. -->
+    <div class="grid grid-cols-2 gap-x-6 gap-y-9 lg:contents">
+      <nav aria-labelledby="footer-shop">
+        <h2 id="footer-shop" class={heading}>Shop</h2>
+        <ul class="mt-4 space-y-2.5">
+          {
+            categories.slice(0, 7).map((c) => (
+              <li>
+                <a href={links.category([c.slug])} class={link}>
+                  {c.name}
+                </a>
+              </li>
+            ))
+          }
+          <li>
+            <a href="/categories/" class="font-semibold text-white hover:underline">All categories</a>
+          </li>
+        </ul>
+      </nav>
+      <nav aria-labelledby="footer-help">
+        <h2 id="footer-help" class={heading}>Help</h2>
+        <ul class="mt-4 space-y-2.5">
+          <li><a href="/track-order/" class={link}>Track your order</a></li>
+          <li><a href="/account/" class={link}>Your account</a></li>
+          <li><a href="/wholesale/" class={link}>Wholesale for businesses</a></li>
+          <li><a href="/deals/" class={link}>Deals</a></li>
+          <li><a href="/new/" class={link}>New arrivals</a></li>
+          <li><a href="/brands/" class={link}>All brands</a></li>
+          {
+            (pages ?? []).map((p) => (
+              <li>
+                <a href={`/${p.slug}/`} class={link}>
+                  {p.title}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
     </div>
+
+    <!-- Contact -->
     <div>
-      <h2 class="text-sm font-semibold tracking-wide text-white uppercase">More</h2>
-      <ul class="mt-3 space-y-2 text-sm">
-        <li><a href="/deals/" class="hover:text-white">Deals</a></li>
-        <li><a href="/new/" class="hover:text-white">New arrivals</a></li>
-        <li><a href="/brands/" class="hover:text-white">All brands</a></li>
-        <li><a href="/wholesale/" class="hover:text-white">Wholesale for businesses</a></li>
-        <li><a href="/track-order/" class="hover:text-white">Track your order</a></li>
-        <li><a href="/shop/" class="hover:text-white">All products</a></li>
-        {(pages ?? []).map((p) => <li><a href={`/${p.slug}/`} class="hover:text-white">{p.title}</a></li>)}
-      </ul>
-    </div>
-    <div>
-      <h2 class="text-sm font-semibold tracking-wide text-white uppercase">Contact us</h2>
-      <ul class="mt-3 space-y-2.5 text-sm">
-        {
-          store.phone && (
-            <li class="flex gap-2">
-              <Phone class="mt-0.5 size-4 shrink-0" />
-              <a href={`tel:${store.phone}`} class="hover:text-white">{store.phone}</a>
-            </li>
-          )
-        }
+      <h2 class={heading}>Contact us</h2>
+      <ul class="mt-4 space-y-3">
         {
           store.email && (
-            <li class="flex gap-2">
-              <Mail class="mt-0.5 size-4 shrink-0" />
-              <a href={`mailto:${store.email}`} class="break-all hover:text-white">{store.email}</a>
+            <li class="flex gap-2.5">
+              <Mail class="mt-0.5 size-4 shrink-0 text-brand-300" />
+              <a href={`mailto:${store.email}`} class:list={[link, 'break-all']}>
+                {store.email}
+              </a>
             </li>
           )
         }
         {
           store.address && (
-            <li class="flex gap-2">
-              <MapPin class="mt-0.5 size-4 shrink-0" />
-              {store.address}
+            <li class="flex gap-2.5">
+              <MapPin class="mt-0.5 size-4 shrink-0 text-brand-300" />
+              <span class="leading-relaxed">{store.address}</span>
             </li>
           )
         }
         {
           store.openingHours && (
-            <li class="flex gap-2">
-              <Clock class="mt-0.5 size-4 shrink-0" />
+            <li class="flex gap-2.5">
+              <Clock class="mt-0.5 size-4 shrink-0 text-brand-300" />
               {store.openingHours}
             </li>
           )
         }
       </ul>
+      <p class="mt-5 flex gap-2.5 rounded-xl bg-white/5 px-3.5 py-3 text-brand-200 ring-1 ring-white/10">
+        <Truck class="mt-0.5 size-4 shrink-0 text-brand-300" />
+        <span><span class="font-semibold text-white">Delivery all over Bangladesh.</span> Pay cash when it arrives.</span>
+      </p>
     </div>
   </div>
-  <div class="border-t border-white/10">
-    <div class="mx-auto flex max-w-site flex-wrap justify-between gap-2 px-4 py-4 text-xs text-brand-300 sm:px-6">
-      <span>© {new Date().getFullYear()} {store.name} Bangladesh</span>
-      <span>Cash on delivery · bKash · Nagad · Cards</span>
+
+  <!-- Payment methods. On phones the strip slides sideways, so the logos stay readable. -->
+  <div class="bg-white">
+    <div class="scrollbar-none mx-auto max-w-site overflow-x-auto px-4 py-3 sm:px-6">
+      <a href="https://www.sslcommerz.com/" target="_blank" rel="noopener noreferrer" title="SSLCommerz" class="block min-w-[760px]">
+        <img
+          src="https://securepay.sslcommerz.com/public/image/SSLCommerz-Pay-With-logo-All-Size-01.png"
+          alt="Pay with cards, mobile banking and internet banking. Verified by SSLCommerz"
+          width="5235"
+          height="586"
+          loading="lazy"
+          decoding="async"
+          class="h-auto w-full"
+        />
+      </a>
     </div>
+  </div>
+
+  <div class="mx-auto flex max-w-site flex-col gap-1 px-4 py-4 text-xs text-brand-300 sm:flex-row sm:justify-between sm:px-6">
+    <span>© {new Date().getFullYear()} {store.name} Bangladesh. All rights reserved.</span>
+    <span>Paper, stationery and art supplies.</span>
   </div>
 </footer>
