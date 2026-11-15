@@ -1,7 +1,7 @@
 ---
 import '@/styles/global.css';
 import displayFont from '@fontsource/bricolage-grotesque/files/bricolage-grotesque-latin-700-normal.woff2?url';
-import { Home, LayoutGrid, Phone, Search } from 'lucide-preact';
+import { Flame, Heart, Home, LayoutGrid, PackageSearch, Phone, Search } from 'lucide-preact';
 import { getCatalog } from '@/lib/api';
 import type { Img } from '@/lib/types';
 import { imageAt, links, SITE_URL, srcSet } from '@/lib/utils';
@@ -43,6 +43,12 @@ const { store, categories } = catalog;
 const path = Astro.url.pathname;
 // Which menu item to highlight: the main category of a category page (or of the product), Deals, Brands.
 const active = section ?? path.match(/^\/product-category\/([^/]+)/)?.[1] ?? (path.startsWith('/deals') ? 'deals' : path.startsWith('/brand') ? 'brands' : path.startsWith('/wholesale') ? 'wholesale' : null);
+// Menu items: one look, and a clear one for the page you are on.
+const navItem =
+  'flex items-center gap-1.5 rounded-full px-3 py-2 text-sm whitespace-nowrap text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900 aria-[current=page]:bg-brand-700 aria-[current=page]:font-semibold aria-[current=page]:text-white';
+// Round header buttons (track order, wishlist), the same size as the account and cart buttons.
+const headerIcon =
+  'flex size-11 shrink-0 items-center justify-center rounded-full text-zinc-700 ring-1 ring-zinc-200 hover:bg-zinc-50 hover:text-brand-700 aria-[current=page]:bg-brand-50 aria-[current=page]:text-brand-700 aria-[current=page]:ring-brand-300';
 const pageTitle = fullTitle ? title : `${title} | ${store.name}`;
 const pageDescription = description ?? store.tagline ?? 'Paper, stationery and art supplies, delivered across Bangladesh.';
 const canonicalUrl = SITE_URL + (canonical ?? path);
@@ -91,8 +97,8 @@ const imageOrigin = store.logo ? new URL(imageAt(store.logo, 160)).origin : null
           </span>
         </a>
         <DeliverToButton client:idle className="hidden w-48 shrink-0 lg:flex" />
-        <SearchBox client:idle initial={query} autoFocus={focusSearch} className="hidden flex-1 md:block" />
-        <div class="ml-auto flex items-center gap-2 md:ml-0">
+        <SearchBox client:idle initial={query} autoFocus={focusSearch} className="hidden max-w-lg flex-1 md:block" />
+        <div class="ml-auto flex items-center gap-2">
           {
             store.phone && (
               <a href={`tel:${store.phone}`} class="hidden items-center gap-2 text-sm xl:flex">
@@ -104,6 +110,12 @@ const imageOrigin = store.logo ? new URL(imageAt(store.logo, 160)).origin : null
               </a>
             )
           }
+          <a href="/track-order/" aria-label="Track your order" title="Track your order" aria-current={path.startsWith('/track-order') ? 'page' : undefined} class={headerIcon}>
+            <PackageSearch class="size-5" strokeWidth={2} />
+          </a>
+          <a href="/wishlist/" aria-label="Your wishlist" title="Your wishlist" aria-current={path.startsWith('/wishlist') ? 'page' : undefined} class={headerIcon}>
+            <Heart class="size-5" strokeWidth={2} />
+          </a>
           <HeaderAccount client:idle className="hidden lg:flex" />
           <HeaderCart client:idle className="hidden lg:flex" />
         </div>
@@ -124,7 +136,7 @@ const imageOrigin = store.logo ? new URL(imageAt(store.logo, 160)).origin : null
                 <a
                   href={links.category([c.slug])}
                   aria-current={active === c.slug ? 'page' : undefined}
-                  class="block rounded-full px-3 py-2 text-sm whitespace-nowrap text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 aria-[current=page]:bg-brand-50 aria-[current=page]:font-semibold aria-[current=page]:text-brand-800"
+                  class={navItem}
                 >
                   {c.name}
                 </a>
@@ -132,27 +144,11 @@ const imageOrigin = store.logo ? new URL(imageAt(store.logo, 160)).origin : null
             ))
           }
         </ul>
-        <a
-          href="/deals/"
-          aria-current={active === 'deals' ? 'page' : undefined}
-          class="rounded-full bg-marigold-100 px-3 py-2 text-sm font-semibold whitespace-nowrap text-zinc-900 hover:bg-marigold-200 aria-[current=page]:bg-marigold-300"
-        >
-          Deals
+        <a href="/deals/" aria-current={active === 'deals' ? 'page' : undefined} class:list={[navItem, 'group font-semibold']}>
+          <Flame class="size-4 text-marigold-500 group-aria-[current=page]:text-marigold-300" /> Deals
         </a>
-        <a
-          href="/brands/"
-          aria-current={active === 'brands' ? 'page' : undefined}
-          class="rounded-full px-3 py-2 text-sm whitespace-nowrap text-zinc-700 hover:bg-zinc-100 aria-[current=page]:bg-brand-50 aria-[current=page]:font-semibold aria-[current=page]:text-brand-800"
-        >
-          Brands
-        </a>
-        <a
-          href="/wholesale/"
-          aria-current={active === 'wholesale' ? 'page' : undefined}
-          class="rounded-full px-3 py-2 text-sm whitespace-nowrap text-zinc-700 hover:bg-zinc-100 aria-[current=page]:bg-brand-50 aria-[current=page]:font-semibold aria-[current=page]:text-brand-800"
-        >
-          Wholesale
-        </a>
+        <a href="/brands/" aria-current={active === 'brands' ? 'page' : undefined} class={navItem}>Brands</a>
+        <a href="/wholesale/" aria-current={active === 'wholesale' ? 'page' : undefined} class={navItem}>Wholesale</a>
       </nav>
     </header>
 
