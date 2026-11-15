@@ -1,6 +1,7 @@
 ---
 import type { ProductCard } from '@/lib/types';
 import TagBadge from './TagBadge.astro';
+import { Stars } from './Stars';
 import { imageAt, links, money, percentOff, srcSet } from '@/lib/utils';
 
 /**
@@ -69,6 +70,14 @@ const href = links.product(p.slug);
   <div class="flex flex-1 flex-col p-2.5 sm:p-3">
     <span class="h-4 truncate text-[11px] leading-4 font-medium tracking-wide text-zinc-500 uppercase">{p.brand?.name}</span>
     <a href={href} class="mt-0.5 line-clamp-2 min-h-[2.5rem] text-sm leading-5 text-zinc-800 hover:text-brand-700">{p.name}</a>
+    {
+      p.rating ? (
+        <span class="mt-1 flex items-center gap-1 text-xs text-zinc-500">
+          <Stars value={p.rating.average} size="size-3.5" />
+          <span class="tabular-nums">{p.rating.average.toFixed(1)} ({p.rating.count})</span>
+        </span>
+      ) : null
+    }
     <div class="mt-1.5 flex flex-wrap items-baseline gap-x-1.5">
       {p.variantCount > 1 && <span class="text-xs text-zinc-500">from</span>}
       <span data-price class="text-[15px] font-semibold text-zinc-900 tabular-nums">{money(p.price)}</span>

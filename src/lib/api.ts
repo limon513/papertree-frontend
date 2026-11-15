@@ -1,5 +1,5 @@
 import { API_URL } from 'astro:env/server';
-import type { Catalog, ContentPage, HomeData, PlacedOrder, Product, ProductList } from './types';
+import type { Catalog, ContentPage, HomeData, PlacedOrder, Product, ProductList, ReviewList } from './types';
 
 const API = API_URL.replace(/\/$/, '');
 
@@ -49,6 +49,8 @@ export const getCatalog = () => get<Catalog>('/catalog', 300);
 export const getHome = () => get<HomeData>('/home', 60);
 export const getProduct = (slug: string) => get<Product>(`/products/${encodeURIComponent(slug)}`, 60);
 export const getPage = (slug: string) => get<ContentPage>(`/pages/${encodeURIComponent(slug)}`, 60);
+/** A product's approved reviews (first page) and the summary. */
+export const getReviews = (slug: string) => get<ReviewList>(`/products/${encodeURIComponent(slug)}/reviews`, 60);
 /** A placed order (thank-you page). Personal: never kept in the cache. */
 export const getOrder = (token: string) => fetchJson<PlacedOrder>(`/orders/${encodeURIComponent(token)}`);
 
