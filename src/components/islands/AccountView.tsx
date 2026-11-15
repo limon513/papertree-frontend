@@ -6,6 +6,7 @@ import type { Img, Places, PlacedOrder } from '@/lib/types';
 import { cn, imageAt, money } from '@/lib/utils';
 import { Avatar } from './AccountButtons';
 import { BusinessCard } from './BusinessCard';
+import { RateYourPurchases } from './RateYourPurchases';
 import { ParcelCard } from './TrackOrder';
 
 interface OrderRow {
@@ -202,6 +203,7 @@ export default function AccountView() {
 
       <Addresses m={m} />
       <BusinessCard m={m} />
+      <RateYourPurchases />
     </div>
   );
 }

@@ -89,6 +89,8 @@ export interface ProductCard {
   isNew: boolean;
   /** Tags shown on cards ("Overseas"). */
   labels?: ProductTag[];
+  /** Approved reviews: average stars and how many (null: none yet). */
+  rating?: Rating | null;
 }
 
 /** A product tag, shown as a coloured badge. */
@@ -173,6 +175,8 @@ export interface ProductVariant {
 
 export interface Product {
   id: number;
+  /** Approved reviews: average stars and how many (null: none yet). */
+  rating?: Rating | null;
   /** Its tags ("Overseas"), all of them. */
   labels?: ProductTag[];
   /** Businesses pay less (the price is only for approved business accounts). */
@@ -339,4 +343,32 @@ export interface TrackedOrder {
   trackingUrl: string | null;
   parcelStatus: string | null;
   journey: ParcelStep[];
+}
+
+/** Average stars and how many approved reviews. */
+export interface Rating {
+  average: number;
+  count: number;
+}
+
+/** One approved review as shoppers see it. */
+export interface Review {
+  id: number;
+  rating: number;
+  body: string | null;
+  photos: Img[];
+  /** Shortened: "Nusrat J." */
+  name: string;
+  verified: boolean;
+  createdAt: string;
+  reply: string | null;
+  repliedAt: string | null;
+}
+
+export interface ReviewList {
+  summary: { average: number | null; count: number; stars: Record<string, number> };
+  items: Review[];
+  total: number;
+  page: number;
+  pages: number;
 }

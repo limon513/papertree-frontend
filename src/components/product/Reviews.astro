@@ -1,0 +1,75 @@
+---
+import { ReviewItem, Stars } from '@/components/Stars';
+import MoreReviews from '@/components/islands/MoreReviews';
+import ReviewForm from '@/components/islands/ReviewForm';
+import type { ReviewList } from '@/lib/types';
+
+/**
+ * Ratings and reviews on a product page. The summary and the first page are part of the page (Google
+ * reads them); more pages and the review form run in the browser.
+ */
+interface Props {
+  productId: number;
+  productName: string;
+  slug: string;
+  reviews: ReviewList | null;
+}
+const { productId, productName, slug, reviews } = Astro.props;
+const summary = reviews?.summary;
+const count = summary?.count ?? 0;
+const average = summary?.average ?? 0;
+---
+
+<section id="reviews" class="mt-12 scroll-mt-24" aria-labelledby="reviews-title">
+  <h2 id="reviews-title" class="font-display text-xl font-bold">Ratings and reviews</h2>
+  <div class="mt-4 grid gap-8 lg:grid-cols-[300px_1fr]">
+    <div class="space-y-4">
+      {
+        count > 0 ? (
+          <div class="rounded-2xl bg-white p-5 ring-1 ring-zinc-200">
+            <div class="flex items-center gap-3">
+              <span class="font-display text-4xl font-bold text-zinc-900">{average.toFixed(1)}</span>
+              <div>
+                <Stars value={average} size="size-5" />
+                <p class="mt-0.5 text-sm text-zinc-500">
+                  {count} review{count === 1 ? '' : 's'}
+                </p>
+              </div>
+            </div>
+            <ul class="mt-4 space-y-1.5">
+              {[5, 4, 3, 2, 1].map((s) => {
+                const n = summary?.stars[String(s)] ?? 0;
+                return (
+                  <li class="flex items-center gap-2 text-xs text-zinc-600">
+                    <span class="w-3 text-right">{s}</span>
+                    <span class="h-2 flex-1 overflow-hidden rounded-full bg-zinc-100">
+                      <span class="block h-full rounded-full bg-marigold-400" style={`width:${count ? Math.round((n / count) * 100) : 0}%`} />
+                    </span>
+                    <span class="w-6 text-right tabular-nums">{n}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ) : (
+          <p class="text-sm text-zinc-600">No reviews yet. Bought this? Be the first to review it.</p>
+        )
+      }
+      <div id="write-review" class="scroll-mt-24">
+        <ReviewForm client:idle productId={productId} productName={productName} />
+      </div>
+    </div>
+    <div>
+      {
+        reviews && reviews.items.length > 0 && (
+          <ul class="divide-y divide-zinc-100 border-y border-zinc-100">
+            {reviews.items.map((r) => (
+              <ReviewItem review={r} />
+            ))}
+          </ul>
+        )
+      }
+      {reviews && reviews.pages > 1 && <MoreReviews client:visible slug={slug} pages={reviews.pages} />}
+    </div>
+  </div>
+</section>
