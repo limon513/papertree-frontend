@@ -11,7 +11,8 @@ const REFRESH = 60_000;
 type Rule = { to: string; code: number };
 let rules = new Map<string, Rule>();
 let loadedAt = 0;
-let loading: Promise<void> | null = null;
+/** When a visit last started fetching the list (so not every visit in that moment fetches it too). */
+let loadingSince = 0;
 
 async function load() {
   try {
@@ -26,17 +27,24 @@ async function load() {
   } catch {
     // The shop API is busy or down: keep the list we had, and try again in a minute.
     loadedAt = Date.now();
-  } finally {
-    loading = null;
   }
 }
 
 /**
  * The redirect for this (tidy) path. Once a minute the list is fetched again; that one visit waits
  * for it (a few hundredths of a second), so a new redirect works from the next minute on.
+ *
+ * A visit never waits on another visit's fetch: on Cloudflare Workers that fetch dies with the visit
+ * that started it, and every visit waiting on it would fail. Visits meanwhile use the list they have.
  */
 export async function redirectFor(path: string) {
-  if (!loadedAt || Date.now() - loadedAt > REFRESH) await (loading ??= load());
+  const now = Date.now();
+  const due = !loadedAt || now - loadedAt > REFRESH;
+  // The very first list is always waited for; later ones by one visit at a time (others go on).
+  if (due && (!loadedAt || now - loadingSince > 5000)) {
+    loadingSince = now;
+    await load();
+  }
   return rules.get(path) ?? null;
 }
 
