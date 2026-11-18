@@ -38,9 +38,17 @@ document.addEventListener('click', (e) => {
 });
 
 // The bubble on each cart icon: how many of this product are in the cart (all its options together).
-effect(() => {
+effect(() => bubbles(cartState.value.items));
+
+// Cards added later (the home page's "Just for you" list): their bubbles and business prices too.
+document.addEventListener('pt:cards', () => {
+  bubbles(cartState.peek().items);
+  if (me.peek()?.business) void wholesaleCards();
+});
+
+function bubbles(items: CartItem[]) {
   const inCart = new Map<number, number>();
-  for (const i of cartState.value.items) inCart.set(i.productId, (inCart.get(i.productId) ?? 0) + i.quantity);
+  for (const i of items) inCart.set(i.productId, (inCart.get(i.productId) ?? 0) + i.quantity);
   for (const box of document.querySelectorAll<HTMLElement>('[data-product]')) {
     const bubble = box.querySelector<HTMLElement>('[data-qty]');
     if (!bubble) continue;
@@ -54,7 +62,7 @@ effect(() => {
       bubble.classList.add('animate-pop');
     }
   }
-});
+}
 
 // ---- Wholesale prices (a signed-in approved business) ----
 

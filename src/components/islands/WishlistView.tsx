@@ -17,7 +17,7 @@ export default function WishlistView() {
         <>
           <h2 class="mt-4 font-display text-lg font-bold text-zinc-900">Nothing saved yet</h2>
           <p class="mt-1 max-w-sm text-sm text-zinc-600">Save products you like with the heart, and we will tell you when they are back in stock or cheaper.</p>
-          <a href="/shop/" class="mt-5 flex h-11 items-center rounded-xl bg-brand-700 px-5 text-sm font-semibold text-white hover:bg-brand-800">
+          <a href="/shop/" class="mt-5 flex h-11 items-center rounded-xl bg-brand-600 px-5 text-sm font-semibold text-white hover:bg-brand-700">
             Browse products
           </a>
         </>
@@ -25,7 +25,7 @@ export default function WishlistView() {
         <>
           <h2 class="mt-4 font-display text-lg font-bold text-zinc-900">Sign in to see your wishlist</h2>
           <p class="mt-1 max-w-sm text-sm text-zinc-600">Your saved products stay with your account, on your phone and computer.</p>
-          <button type="button" onClick={() => openSignIn()} class="mt-5 flex h-11 cursor-pointer items-center rounded-xl bg-brand-700 px-5 text-sm font-semibold text-white hover:bg-brand-800">
+          <button type="button" onClick={() => openSignIn()} class="mt-5 flex h-11 cursor-pointer items-center rounded-xl bg-brand-600 px-5 text-sm font-semibold text-white hover:bg-brand-700">
             Sign in
           </button>
         </>

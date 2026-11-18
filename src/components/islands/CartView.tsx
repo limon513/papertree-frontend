@@ -48,7 +48,7 @@ export default function CartView() {
           <p class="mt-1 text-sm text-zinc-500">Tap “Add” on any product and it lands here.</p>
         )}
         <div class="mt-5 flex flex-wrap justify-center gap-2">
-          <a href="/deals/" class="flex h-11 items-center gap-2 rounded-xl bg-brand-700 px-5 text-sm font-semibold text-white hover:bg-brand-800">
+          <a href="/deals/" class="flex h-11 items-center gap-2 rounded-xl bg-brand-600 px-5 text-sm font-semibold text-white hover:bg-brand-700">
             Today’s deals <ArrowRight class="size-4" />
           </a>
           <a href="/categories/" class="flex h-11 items-center rounded-xl bg-white px-5 text-sm font-semibold text-zinc-800 ring-1 ring-zinc-300">
@@ -263,7 +263,7 @@ export default function CartView() {
           {picked.length ? (
             <a
               href="/checkout/"
-              class="flex h-12 items-center justify-between gap-3 rounded-xl bg-brand-700 px-5 font-semibold text-white hover:bg-brand-800 md:justify-center"
+              class="flex h-12 items-center justify-between gap-3 rounded-xl bg-brand-600 px-5 font-semibold text-white hover:bg-brand-700 md:justify-center"
             >
               <span>Checkout{allPicked ? '' : ` (${pickedCount})`}</span>
               <span class="tabular-nums md:hidden">{money(total)}</span>

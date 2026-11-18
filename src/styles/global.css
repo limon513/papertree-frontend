@@ -16,27 +16,31 @@
   --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Nirmala UI', 'Noto Sans Bengali', 'Bangla Sangam MN', ui-sans-serif, system-ui, sans-serif;
   --font-display: 'Bricolage Grotesque', system-ui, Roboto, 'Nirmala UI', 'Noto Sans Bengali', ui-sans-serif, sans-serif;
 
-  /* PaperTree green (same as the admin panel). */
-  --color-brand-50: #f0f9f1;
-  --color-brand-100: #dcf0de;
-  --color-brand-200: #bbe1c0;
-  --color-brand-300: #8dca96;
-  --color-brand-400: #58ab66;
-  --color-brand-500: #348f44;
-  --color-brand-600: #247235;
-  --color-brand-700: #1d5b2c;
-  --color-brand-800: #1a4926;
-  --color-brand-900: #163c21;
-  --color-brand-950: #0a2111;
+  /*
+   * Colours (client's choice, 2026-11-17): fresh green 500–600, lime and yellow. The logo keeps its own colours.
+   * - brand (green): buttons and links (600; hover 700), icons and highlights (500), footer (950).
+   * - lime (Tailwind's own): soft backgrounds, tiles and badges.
+   * - marigold (yellow): deals and savings only.
+   */
+  --color-brand-50: #f0fdf4;
+  --color-brand-100: #dcfce7;
+  --color-brand-200: #bbf7d0;
+  --color-brand-300: #86efac;
+  --color-brand-400: #4ade80;
+  --color-brand-500: #22c55e;
+  --color-brand-600: #16a34a;
+  --color-brand-700: #15803d;
+  --color-brand-800: #166534;
+  --color-brand-900: #14532d;
+  --color-brand-950: #052e16;
 
-  /* Highlighter yellow: deals and savings, used sparingly. */
-  --color-marigold-50: #fffbeb;
-  --color-marigold-100: #fff3c4;
-  --color-marigold-200: #ffe588;
-  --color-marigold-300: #ffd23f;
-  --color-marigold-400: #f9bd16;
-  --color-marigold-500: #e09d06;
-  --color-marigold-700: #9a5b07;
+  --color-marigold-50: #fefce8;
+  --color-marigold-100: #fef9c3;
+  --color-marigold-200: #fef08a;
+  --color-marigold-300: #fde047;
+  --color-marigold-400: #facc15;
+  --color-marigold-500: #eab308;
+  --color-marigold-700: #a16207;
 
   /* Page width: roomy on big screens (1536px). */
   --container-site: 96rem;
@@ -111,6 +115,33 @@
     & th, & td { @apply border border-zinc-200 px-3 py-2 text-left; }
     & th { @apply bg-zinc-50 font-medium; }
   }
+
+  /*
+   * Product card (components/ProductCard.astro). A page can hold 100+ cards: their looks are named here
+   * once instead of written out on every card, which keeps pages much lighter.
+   */
+  .pc { @apply flex h-full flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-zinc-200 transition duration-200 hover:shadow-lg hover:shadow-zinc-900/8 hover:ring-zinc-300; }
+  .pc-pic { @apply relative block aspect-square overflow-hidden border-b border-zinc-100 bg-zinc-50; }
+  .pc-img { @apply size-full object-contain p-3 transition duration-300; }
+  .pc-zoom { @apply group-hover:scale-[1.04]; }
+  .pc-off { @apply absolute top-2 left-2 rounded-md bg-marigold-300 px-1.5 py-0.5 text-[11px] font-bold text-zinc-900; }
+  .pc-bars { @apply pointer-events-none absolute inset-x-3 bottom-2 hidden gap-1 group-hover:flex; }
+  .pc-bar { @apply h-1 flex-1 rounded-full; }
+  .pc-body { @apply flex flex-1 flex-col p-2.5 sm:p-3; }
+  .pc-brand { @apply h-4 truncate text-[11px] leading-4 font-medium tracking-wide text-zinc-500 uppercase; }
+  .pc-name { @apply mt-0.5 line-clamp-2 min-h-[2.5rem] text-sm leading-5 text-zinc-800 hover:text-brand-700; }
+  .pc-prices { @apply mt-1.5 flex flex-wrap items-baseline gap-x-1.5; }
+  .pc-price { @apply text-[15px] font-semibold text-zinc-900 tabular-nums; }
+  .pc-was { @apply text-xs text-zinc-400 tabular-nums line-through; }
+  .pc-ws { @apply rounded bg-brand-50 px-1 text-[10px] font-bold tracking-wide text-brand-700 uppercase; }
+  .pc-note { @apply mt-0.5 h-4 text-xs text-marigold-700; }
+  .pc-out { @apply mt-2 flex h-9 items-center justify-center rounded-lg bg-zinc-100 text-sm font-medium text-zinc-400; }
+  .pc-actions { @apply mt-2 flex gap-1.5; }
+  .pc-add { @apply relative flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-brand-50 text-brand-800 ring-1 ring-brand-200 transition hover:bg-brand-100 active:scale-95; }
+  .pc-qty { @apply absolute -top-1.5 -right-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-brand-600 px-1 text-[10px] font-bold text-white ring-2 ring-white tabular-nums; }
+  .pc-buy { @apply flex h-9 min-w-0 flex-1 cursor-pointer items-center justify-center rounded-lg bg-brand-600 px-2 text-sm font-semibold whitespace-nowrap text-white transition hover:bg-brand-700 active:scale-[0.98]; }
+  /* A card's place in a sideways row (components/ProductRail.astro). */
+  .rail-item { @apply w-[44%] shrink-0 snap-start sm:w-[30%] md:w-[23%] lg:w-[calc((100%-5*0.75rem)/6)] 2xl:w-[calc((100%-6*0.75rem)/7)]; }
 }
 
 @utility scrollbar-none {

@@ -206,7 +206,7 @@ export default function BuyBox({ productId, slug, name, options, variants: retai
                   aria-label={can ? value : `${value} (out of stock)`}
                   class={cn(
                     'min-w-12 rounded-full px-4 py-2 text-sm font-medium ring-1 transition',
-                    selected ? 'bg-brand-700 text-white ring-brand-700' : 'bg-white text-zinc-800 ring-zinc-300 hover:ring-zinc-500',
+                    selected ? 'bg-brand-600 text-white ring-brand-700' : 'bg-white text-zinc-800 ring-zinc-300 hover:ring-zinc-500',
                     !can && !selected && 'text-zinc-400 line-through decoration-zinc-300',
                   )}
                 >
@@ -279,7 +279,7 @@ export default function BuyBox({ productId, slug, name, options, variants: retai
             )}
           </button>
           {variant?.inStock && (
-            <button type="button" onClick={buyNow} class="flex h-12 min-w-0 flex-1 items-center justify-center rounded-xl bg-brand-700 px-3 text-sm font-semibold whitespace-nowrap text-white hover:bg-brand-800 sm:text-base">
+            <button type="button" onClick={buyNow} class="flex h-12 min-w-0 flex-1 items-center justify-center rounded-xl bg-brand-600 px-3 text-sm font-semibold whitespace-nowrap text-white hover:bg-brand-700 sm:text-base">
               Buy now
             </button>
           )}

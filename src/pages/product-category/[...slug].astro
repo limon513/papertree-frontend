@@ -1,5 +1,6 @@
 ---
 import Layout from '@/layouts/Layout.astro';
+import ViewedCategory from '@/components/ViewedCategory.astro';
 import Listing from '@/components/listing/Listing.astro';
 import { getProducts, NotFound } from '@/lib/api';
 import { canonicalFor, hrefWith, listParams } from '@/lib/listing';
@@ -48,4 +49,5 @@ Astro.response.headers.set('cache-control', 'public, max-age=0, s-maxage=60, sta
     countUrl={`${API_PUBLIC_URL}/v1/store/products?category=${encodeURIComponent(category.slug)}`}
     subcategories={category.children.map((c) => ({ name: c.name, href: links.category([...path, c.slug]), icon: c.icon, count: c.productCount }))}
   />
+  <ViewedCategory slug={category.slug} />
 </Layout>

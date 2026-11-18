@@ -2,6 +2,7 @@
 import TagBadge from '@/components/TagBadge.astro';
 import { ChevronRight, ShieldCheck, Wallet } from 'lucide-preact';
 import Layout from '@/layouts/Layout.astro';
+import ViewedCategory from '@/components/ViewedCategory.astro';
 import Gallery from '@/components/product/Gallery.astro';
 import ProductRail from '@/components/ProductRail.astro';
 import BuyBox from '@/components/islands/BuyBox';
@@ -160,4 +161,5 @@ Astro.response.headers.set('cache-control', 'public, max-age=0, s-maxage=60, sta
   </div>
 
   <ProductRail title="You may also need" href={crumbs.length ? crumbs[crumbs.length - 1]!.href : undefined} products={product.related} />
+  <ViewedCategory slug={path.at(-1)?.slug} />
 </Layout>

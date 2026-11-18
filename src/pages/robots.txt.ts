@@ -10,6 +10,7 @@ export const GET: APIRoute = () =>
       'Disallow: /checkout/',
       'Disallow: /account/',
       'Disallow: /wishlist/',
+      'Disallow: /fragments/',
       'Disallow: /search/',
       'Disallow: /*?*sort=',
       'Disallow: /*?*min=',

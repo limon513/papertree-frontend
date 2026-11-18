@@ -1,5 +1,5 @@
 import { API_URL } from 'astro:env/server';
-import type { Catalog, ContentPage, HomeData, PlacedOrder, Product, ProductList, ReviewList } from './types';
+import type { Catalog, ContentPage, ForYouPage, HomeData, PlacedOrder, Product, ProductList, ReviewList } from './types';
 
 const API = API_URL.replace(/\/$/, '');
 
@@ -28,11 +28,24 @@ function remember(path: string, value: unknown) {
   while (cache.size > MAX_ENTRIES) cache.delete(cache.keys().next().value!);
 }
 
+/**
+ * One read from the shop API. A short hiccup (no answer, or a 5xx/429) is tried once more after a
+ * moment, so a visitor rarely meets the "could not load" page. "Not found" is an answer: no retry.
+ */
 async function fetchJson<T>(path: string): Promise<T> {
-  const res = await fetch(`${API}/v1/store${path}`);
-  if (res.status === 404) throw new NotFound(path);
-  if (!res.ok) throw new Error(`The shop API answered ${res.status} for ${path}`);
-  return (await res.json()) as T;
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const res = await fetch(`${API}/v1/store${path}`, { signal: AbortSignal.timeout(15_000) });
+      if (res.status === 404) throw new NotFound(path);
+      if (!res.ok) throw new Error(`The shop API answered ${res.status} for ${path}`, { cause: res.status });
+      return (await res.json()) as T;
+    } catch (err) {
+      const status = err instanceof Error && typeof err.cause === 'number' ? err.cause : null;
+      const worthRetry = !(err instanceof NotFound) && (status === null || status >= 500 || status === 429);
+      if (attempt >= 2 || !worthRetry) throw err;
+      await new Promise((r) => setTimeout(r, 400));
+    }
+  }
 }
 
 async function get<T>(path: string, ttl = 60): Promise<T> {
@@ -58,6 +71,9 @@ async function get<T>(path: string, ttl = 60): Promise<T> {
 
 export const getCatalog = () => get<Catalog>('/catalog', 300);
 export const getHome = () => get<HomeData>('/home', 60);
+/** A page of "Just for you" (like: category slugs the shopper looked at lately). */
+export const getForYou = (page: number, like: string[]) =>
+  get<ForYouPage>(`/for-you?page=${page}${like.length ? `&like=${encodeURIComponent(like.join(','))}` : ''}`, 60);
 export const getProduct = (slug: string) => get<Product>(`/products/${encodeURIComponent(slug)}`, 60);
 export const getPage = (slug: string) => get<ContentPage>(`/pages/${encodeURIComponent(slug)}`, 60);
 /** A product's approved reviews (first page) and the summary. */

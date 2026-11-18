@@ -34,7 +34,7 @@ Astro.response.headers.set('cache-control', 'public, max-age=0, s-maxage=300, st
         categories.map((c) => (
           <li class="rounded-3xl bg-white p-4 ring-1 ring-zinc-200/80">
             <a href={links.category([c.slug])} class="flex items-center gap-3">
-              <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-brand-50">
+              <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-lime-50">
                 {c.icon ? <img src={iconUrl(c.icon)} alt="" width="36" height="36" class="size-9" /> : <Sparkles class="size-6 text-brand-600" />}
               </span>
               <span class="flex-1">
