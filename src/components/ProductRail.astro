@@ -12,12 +12,10 @@ interface Props {
   tone?: 'plain' | 'deals' | 'new';
   /** A short line under the title. */
   subtitle?: string;
-  /** Number the products (#1, #2…) on their pictures: best sellers. */
-  ranked?: boolean;
   /** The first row on the page: its pictures load first. */
   priority?: boolean;
 }
-const { title, href, products, tone = 'plain', subtitle, ranked = false, priority = false } = Astro.props;
+const { title, href, products, tone = 'plain', subtitle, priority = false } = Astro.props;
 const band = { plain: null, deals: 'bg-marigold-50', new: 'bg-lime-50' }[tone];
 ---
 
@@ -40,7 +38,7 @@ const band = { plain: null, deals: 'bg-marigold-50', new: 'bg-lime-50' }[tone];
           )}
         </div>
         <div class="rail relative">
-          <ul class:list={['scrollbar-none -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-px-4 px-4 pb-1 sm:-mx-6 sm:scroll-px-6 sm:px-6 lg:mx-0 lg:px-0', ranked && 'ranked']}>
+          <ul class="scrollbar-none -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-px-4 px-4 pb-1 sm:-mx-6 sm:scroll-px-6 sm:px-6 lg:mx-0 lg:px-0">
             {products.map((p, i) => (
               <li class="rail-item">
                 <ProductCard product={p} priority={priority && i < 2} />

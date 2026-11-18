@@ -129,13 +129,13 @@ Astro.response.headers.set('cache-control', 'public, max-age=0, s-maxage=60, sta
     </div>
   </section>
 
-  <!-- Each section has its own look: deals yellow, best sellers ranked, new arrivals lime. -->
+  <!-- Each section has its own look: deals yellow, best sellers green trophy, new arrivals lime. -->
   <ProductRail title="Today’s deals" subtitle="The biggest discounts right now" href="/deals/" products={home.deals} tone="deals" priority>
     <span slot="icon" class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-marigold-300"><Flame class="size-5 text-zinc-900" /></span>
   </ProductRail>
   {
     home.bestSellers.length >= 4 && (
-      <ProductRail title="Best sellers" subtitle="What everyone is buying" href="/shop/?sort=popular" products={home.bestSellers} ranked>
+      <ProductRail title="Best sellers" subtitle="What everyone is buying" href="/shop/?sort=popular" products={home.bestSellers}>
         <span slot="icon" class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-600"><Trophy class="size-5 text-white" /></span>
       </ProductRail>
     )
