@@ -116,12 +116,13 @@ export interface HomeData {
   deals: ProductCard[];
   newArrivals: ProductCard[];
   bestSellers: ProductCard[];
-  categoryRows: { category: { name: string; slug: string; icon: string | null }; products: ProductCard[] }[];
-  /** "Just for you": the first page of the endless list at the bottom. */
+  /** "All products": a mix from the main categories (12). */
+  allProducts?: ProductCard[];
+  /** "Just for you": popular picks; the browser swaps in picks from the shopper's recent categories. */
   forYou?: ForYouPage;
 }
 
-/** A page of "Just for you" products (18). */
+/** "Just for you" products (12). */
 export interface ForYouPage {
   items: ProductCard[];
   page: number;

@@ -137,11 +137,22 @@
   .pc-note { @apply mt-0.5 h-4 text-xs text-marigold-700; }
   .pc-out { @apply mt-2 flex h-9 items-center justify-center rounded-lg bg-zinc-100 text-sm font-medium text-zinc-400; }
   .pc-actions { @apply mt-2 flex gap-1.5; }
-  .pc-add { @apply relative flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-brand-50 text-brand-800 ring-1 ring-brand-200 transition hover:bg-brand-100 active:scale-95; }
+  .pc-add { @apply relative flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-white ring-1 ring-zinc-200 transition hover:bg-lime-50 hover:ring-lime-300 active:scale-95; }
   .pc-qty { @apply absolute -top-1.5 -right-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-brand-600 px-1 text-[10px] font-bold text-white ring-2 ring-white tabular-nums; }
   .pc-buy { @apply flex h-9 min-w-0 flex-1 cursor-pointer items-center justify-center rounded-lg bg-brand-600 px-2 text-sm font-semibold whitespace-nowrap text-white transition hover:bg-brand-700 active:scale-[0.98]; }
   /* A card's place in a sideways row (components/ProductRail.astro). */
-  .rail-item { @apply w-[44%] shrink-0 snap-start sm:w-[30%] md:w-[23%] lg:w-[calc((100%-5*0.75rem)/6)] 2xl:w-[calc((100%-6*0.75rem)/7)]; }
+  .rail-item { @apply w-[44%] shrink-0 snap-start sm:w-[31%] md:w-[30%] lg:w-[calc((100%-4*0.75rem)/5)] 2xl:w-[calc((100%-5*0.75rem)/6)]; }
+  /* Home grids (All products, Just for you): the same card widths as the rows. */
+  .home-grid { @apply grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 2xl:grid-cols-6; }
+  /* 12 products: on 5-wide screens show 10, so the last line is full. */
+  .home-grid > li:nth-child(n + 11) { @apply lg:hidden 2xl:block; }
+  /* Best sellers: a rank number on each picture (#1, #2…). */
+  .ranked { counter-reset: rank; }
+  .ranked > li { counter-increment: rank; }
+  .ranked .pc-pic::after {
+    content: counter(rank);
+    @apply absolute bottom-2 left-2 flex size-7 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white shadow-sm ring-2 ring-white;
+  }
 }
 
 @utility scrollbar-none {
