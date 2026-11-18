@@ -209,6 +209,8 @@ export interface Product {
 }
 
 export interface Suggestions {
+  /** Suggested searches: past searches that start with the typed words (up to 5). */
+  terms?: string[];
   products: ProductCard[];
   total: number;
   categories: { name: string; slug: string; icon: string | null }[];
