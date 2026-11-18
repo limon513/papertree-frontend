@@ -29,8 +29,8 @@ const more = p.image && p.moreImages?.length ? [imageAt(p.image, 400), ...p.more
 const href = links.product(p.slug);
 ---
 
-<div data-card={p.id} class="group flex h-full flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-zinc-200 transition duration-200 hover:shadow-lg hover:shadow-zinc-900/8 hover:ring-zinc-300">
-  <a href={href} class="relative block aspect-square overflow-hidden border-b border-zinc-100 bg-zinc-50" data-pics={more ? JSON.stringify(more) : undefined}>
+<div data-card={p.id} class="pc group">
+  <a href={href} class="pc-pic" data-pics={more ? JSON.stringify(more) : undefined}>
     {
       p.image && (
         <img
@@ -43,7 +43,7 @@ const href = links.product(p.slug);
           loading={priority ? 'eager' : 'lazy'}
           fetchpriority={priority ? 'high' : undefined}
           decoding="async"
-          class:list={['size-full object-contain p-3 transition duration-300', !more && 'group-hover:scale-[1.04]', !p.inStock && 'opacity-50']}
+          class:list={['pc-img', !more && 'pc-zoom', !p.inStock && 'opacity-50']}
         />
       )
     }
@@ -56,20 +56,20 @@ const href = links.product(p.slug);
         </span>
       )
     }
-    {off >= 5 && <span data-off class="absolute top-2 left-2 rounded-md bg-marigold-300 px-1.5 py-0.5 text-[11px] font-bold text-zinc-900">−{off}%</span>}
+    {off >= 5 && <span data-off class="pc-off">−{off}%</span>}
     {
       more && (
-        <span class="pointer-events-none absolute inset-x-3 bottom-2 hidden gap-1 group-hover:flex" aria-hidden="true">
+        <span class="pc-bars" aria-hidden="true">
           {more.map((_, i) => (
-            <i data-bar class:list={['h-1 flex-1 rounded-full', i === 0 ? 'bg-brand-600' : 'bg-zinc-900/15']} />
+            <i data-bar class:list={['pc-bar', i === 0 ? 'bg-brand-600' : 'bg-zinc-900/15']} />
           ))}
         </span>
       )
     }
   </a>
-  <div class="flex flex-1 flex-col p-2.5 sm:p-3">
-    <span class="h-4 truncate text-[11px] leading-4 font-medium tracking-wide text-zinc-500 uppercase">{p.brand?.name}</span>
-    <a href={href} class="mt-0.5 line-clamp-2 min-h-[2.5rem] text-sm leading-5 text-zinc-800 hover:text-brand-700">{p.name}</a>
+  <div class="pc-body">
+    <span class="pc-brand">{p.brand?.name}</span>
+    <a href={href} class="pc-name">{p.name}</a>
     {
       p.rating ? (
         <span class="mt-1 flex items-center gap-1 text-xs text-zinc-500">
@@ -78,19 +78,19 @@ const href = links.product(p.slug);
         </span>
       ) : null
     }
-    <div class="mt-1.5 flex flex-wrap items-baseline gap-x-1.5">
+    <div class="pc-prices">
       {p.variantCount > 1 && <span class="text-xs text-zinc-500">from</span>}
-      <span data-price class="text-[15px] font-semibold text-zinc-900 tabular-nums">{money(p.price)}</span>
-      <span data-was hidden={off <= 0} class="text-xs text-zinc-400 tabular-nums line-through">{off > 0 ? money(p.regularPrice!) : ''}</span>
-      <span data-ws hidden class="rounded bg-brand-50 px-1 text-[10px] font-bold tracking-wide text-brand-700 uppercase">Wholesale</span>
+      <span data-price class="pc-price">{money(p.price)}</span>
+      <span data-was hidden={off <= 0} class="pc-was">{off > 0 ? money(p.regularPrice!) : ''}</span>
+      <span data-ws hidden class="pc-ws">Wholesale</span>
     </div>
-    <span class="mt-0.5 h-4 text-xs text-marigold-700">{p.lowStock ? `Only ${p.lowStock} left` : p.variantCount > 1 ? `${p.variantCount} options` : ''}</span>
+    <span class="pc-note">{p.lowStock ? `Only ${p.lowStock} left` : p.variantCount > 1 ? `${p.variantCount} options` : ''}</span>
     {
       !p.inStock ? (
-        <span class="mt-2 flex h-9 items-center justify-center rounded-lg bg-zinc-100 text-sm font-medium text-zinc-400">Out of stock</span>
+        <span class="pc-out">Out of stock</span>
       ) : (
         <div
-          class="mt-2 flex gap-1.5"
+          class="pc-actions"
           data-item={item ? JSON.stringify(item) : undefined}
           data-quick={item ? undefined : p.slug}
           data-product={p.id}
@@ -100,12 +100,12 @@ const href = links.product(p.slug);
             type="button"
             data-act="add"
             aria-label={`Add ${p.name} to cart`}
-            class="relative flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-800 ring-1 ring-brand-200 transition hover:bg-brand-100 active:scale-95"
+            class="pc-add"
           >
-            <svg class="size-[18px]"><use href="#i-cart" /></svg>
-            <span data-qty hidden class="absolute -top-1.5 -right-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-brand-700 px-1 text-[10px] font-bold text-white ring-2 ring-white tabular-nums">0</span>
+            <svg class="size-5"><use href="#i-cart-plus" /></svg>
+            <span data-qty hidden class="pc-qty">0</span>
           </button>
-          <button type="button" data-act="buy" class="flex h-9 min-w-0 flex-1 items-center justify-center rounded-lg bg-brand-700 px-2 text-sm font-semibold whitespace-nowrap text-white transition hover:bg-brand-800 active:scale-[0.98]">
+          <button type="button" data-act="buy" class="pc-buy">
             Buy now
           </button>
         </div>

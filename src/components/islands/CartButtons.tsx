@@ -22,7 +22,7 @@ export function HeaderCart({ className }: { className?: string }) {
       type="button"
       onClick={() => (panel.value = 'cart')}
       aria-label={label(count)}
-      class={cn('relative flex size-11 shrink-0 items-center justify-center rounded-full bg-brand-700 text-white hover:bg-brand-800', className)}
+      class={cn('relative flex size-11 shrink-0 items-center justify-center rounded-full bg-brand-600 text-white hover:bg-brand-700', className)}
     >
       <ShoppingCart class="size-5" strokeWidth={2.2} />
       <Count count={count} className="-top-1 -right-1" />

@@ -117,7 +117,7 @@ export default function ReviewForm({ productId, productName }: { productId: numb
   }
   if (answer.canReview) {
     return (
-      <button ref={box as never} type="button" onClick={() => setOpen(true)} class="flex h-11 items-center gap-2 rounded-xl bg-brand-700 px-5 text-sm font-semibold text-white hover:bg-brand-800">
+      <button ref={box as never} type="button" onClick={() => setOpen(true)} class="flex h-11 items-center gap-2 rounded-xl bg-brand-600 px-5 text-sm font-semibold text-white hover:bg-brand-700">
         <Star class="size-4" /> Write a review
       </button>
     );
@@ -261,7 +261,7 @@ function Form({ productId, productName, mine, onCancel, onSent }: { productId: n
         </p>
       )}
       <div class="mt-4 flex flex-wrap items-center gap-2">
-        <button type="submit" disabled={busy || uploading} class="flex h-11 items-center gap-2 rounded-xl bg-brand-700 px-5 text-sm font-semibold text-white hover:bg-brand-800 disabled:opacity-60">
+        <button type="submit" disabled={busy || uploading} class="flex h-11 items-center gap-2 rounded-xl bg-brand-600 px-5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60">
           {busy && <Loader2 class="size-4 animate-spin" />} {mine ? 'Send changes' : 'Send review'}
         </button>
         <button type="button" onClick={onCancel} class="h-11 rounded-xl px-4 text-sm font-semibold text-zinc-600 hover:bg-zinc-100">

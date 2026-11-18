@@ -21,7 +21,7 @@ export function HeaderAccount({ className }: { className?: string }) {
   const m = useMe();
   if (m) {
     return (
-      <a href="/account/" aria-label={`Your account (${m.name})`} class={cn('flex size-11 shrink-0 items-center justify-center rounded-full ring-1 ring-zinc-200 hover:ring-brand-400', className)}>
+      <a href="/account/" aria-label={`Your account (${m.name})`} class={cn('flex size-11 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-brand-50', className)}>
         <Avatar name={m.name} url={m.avatarUrl} className="size-9 text-sm" />
       </a>
     );
@@ -32,7 +32,7 @@ export function HeaderAccount({ className }: { className?: string }) {
       onClick={() => openSignIn()}
       aria-label="Sign in"
       // Until we know, the button is there but quiet (no jump when it turns into the picture).
-      class={cn('flex size-11 shrink-0 items-center justify-center rounded-full text-zinc-700 ring-1 ring-zinc-200 hover:bg-zinc-50 hover:text-brand-700', m === undefined && 'opacity-60', className)}
+      class={cn('flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-zinc-700 transition-colors hover:bg-brand-50 hover:text-brand-600', m === undefined && 'opacity-60', className)}
     >
       <UserRound class="size-5" strokeWidth={2} />
     </button>

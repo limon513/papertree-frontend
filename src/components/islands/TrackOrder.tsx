@@ -83,7 +83,7 @@ export default function TrackOrder() {
           {error}
         </p>
       )}
-      <button type="submit" disabled={busy} class="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-700 font-semibold text-white hover:bg-brand-800 disabled:opacity-60 sm:w-auto sm:px-8">
+      <button type="submit" disabled={busy} class="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-600 font-semibold text-white hover:bg-brand-700 disabled:opacity-60 sm:w-auto sm:px-8">
         {busy ? <Loader2 class="size-5 animate-spin" /> : <Package class="size-5" />} Track order
       </button>
     </form>
@@ -124,7 +124,7 @@ function TrackedView({ order: o }: { order: TrackedOrder }) {
           <ol class="mt-5 grid grid-cols-4 gap-1.5" aria-label="Order progress">
             {STEPS.map((s, i) => (
               <li key={s.key} class="text-center">
-                <span class={cn('mx-auto flex size-8 items-center justify-center rounded-full text-sm font-bold', i <= reached ? 'bg-brand-700 text-white' : 'bg-zinc-100 text-zinc-400')}>
+                <span class={cn('mx-auto flex size-8 items-center justify-center rounded-full text-sm font-bold', i <= reached ? 'bg-brand-600 text-white' : 'bg-zinc-100 text-zinc-400')}>
                   {i <= reached ? <Check class="size-4" /> : i + 1}
                 </span>
                 <span class={cn('mt-1.5 block text-xs sm:text-sm', i <= reached ? 'font-semibold text-brand-800' : 'text-zinc-400')}>{s.label}</span>

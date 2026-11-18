@@ -45,7 +45,7 @@ const { pictures, name, start = 0 } = Astro.props;
         <>
           <div class="mt-2 flex justify-center gap-1.5 md:hidden" aria-hidden="true">
             {pictures.map((_, i) => (
-              <span data-dot class:list={['h-1.5 rounded-full transition-all', i === start ? 'w-5 bg-brand-700' : 'w-1.5 bg-zinc-300']} />
+              <span data-dot class:list={['h-1.5 rounded-full transition-all', i === start ? 'w-5 bg-brand-600' : 'w-1.5 bg-zinc-300']} />
             ))}
           </div>
           <div class="mt-3 hidden flex-wrap gap-2 md:flex">
@@ -78,7 +78,7 @@ const { pictures, name, start = 0 } = Astro.props;
       current = i;
       dots.forEach((d, n) => {
         d.classList.toggle('w-5', n === i);
-        d.classList.toggle('bg-brand-700', n === i);
+        d.classList.toggle('bg-brand-600', n === i);
         d.classList.toggle('w-1.5', n !== i);
         d.classList.toggle('bg-zinc-300', n !== i);
       });

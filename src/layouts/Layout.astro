@@ -45,10 +45,10 @@ const path = Astro.url.pathname;
 const active = section ?? path.match(/^\/product-category\/([^/]+)/)?.[1] ?? (path.startsWith('/deals') ? 'deals' : path.startsWith('/brand') ? 'brands' : path.startsWith('/wholesale') ? 'wholesale' : null);
 // Menu items: one look, and a clear one for the page you are on.
 const navItem =
-  'flex items-center gap-1.5 rounded-full px-3 py-2 text-sm whitespace-nowrap text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900 aria-[current=page]:bg-brand-700 aria-[current=page]:font-semibold aria-[current=page]:text-white';
-// Round header buttons (track order, wishlist), the same size as the account and cart buttons.
+  'flex items-center gap-1.5 rounded-full px-3 py-2 text-sm whitespace-nowrap text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900 aria-[current=page]:bg-brand-600 aria-[current=page]:font-semibold aria-[current=page]:text-white';
+// Header icons (track order, wishlist): plain icons, no border; a soft background on hover and on their own page.
 const headerIcon =
-  'flex size-11 shrink-0 items-center justify-center rounded-full text-zinc-700 ring-1 ring-zinc-200 hover:bg-zinc-50 hover:text-brand-700 aria-[current=page]:bg-brand-50 aria-[current=page]:text-brand-700 aria-[current=page]:ring-brand-300';
+  'flex size-11 shrink-0 items-center justify-center rounded-full text-zinc-700 transition-colors hover:bg-brand-50 hover:text-brand-600 aria-[current=page]:bg-brand-50 aria-[current=page]:text-brand-600';
 const pageTitle = fullTitle ? title : `${title} | ${store.name}`;
 const pageDescription = description ?? store.tagline ?? 'Paper, stationery and art supplies, delivered across Bangladesh.';
 const canonicalUrl = SITE_URL + (canonical ?? path);
@@ -62,7 +62,7 @@ const imageOrigin = store.logo ? new URL(imageAt(store.logo, 160)).origin : null
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#1d5b2c" />
+    <meta name="theme-color" content="#16a34a" />
     <meta name="format-detection" content="telephone=no" />
     <title>{pageTitle}</title>
     <meta name="description" content={pageDescription} />
@@ -82,7 +82,7 @@ const imageOrigin = store.logo ? new URL(imageAt(store.logo, 160)).origin : null
   </head>
   <body class="font-sans">
     <IconSprite />
-    <a href="#main" class="sr-only rounded-full bg-brand-700 px-4 py-2 text-white focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50">Skip to content</a>
+    <a href="#main" class="sr-only rounded-full bg-brand-600 px-4 py-2 text-white focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50">Skip to content</a>
     <header class="sticky top-0 z-40 border-b border-zinc-200/80 bg-white/95 backdrop-blur">
       <div class="mx-auto flex max-w-site items-center gap-3 px-4 py-2.5 sm:px-6 lg:gap-6">
         <a href="/" class="flex shrink-0 items-center gap-2" aria-label={`${store.name} home`}>

@@ -19,7 +19,7 @@ type BusinessType = (typeof TYPES)[number][0];
 const card = 'rounded-2xl bg-white ring-1 ring-zinc-200';
 const input = 'mt-1 h-12 w-full rounded-xl border border-zinc-300 bg-white px-3.5 text-[16px] outline-none focus:border-brand-500 focus:ring-3 focus:ring-brand-100 aria-[invalid=true]:border-red-500';
 const label = 'block text-sm font-medium text-zinc-800';
-const primary = 'flex h-12 items-center justify-center gap-2 rounded-xl bg-brand-700 px-5 font-semibold text-white hover:bg-brand-800 disabled:opacity-50';
+const primary = 'flex h-12 items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 font-semibold text-white hover:bg-brand-700 disabled:opacity-50';
 const day = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
 export function BusinessCard({ m }: { m: Me }) {

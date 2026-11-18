@@ -117,6 +117,15 @@ export interface HomeData {
   newArrivals: ProductCard[];
   bestSellers: ProductCard[];
   categoryRows: { category: { name: string; slug: string; icon: string | null }; products: ProductCard[] }[];
+  /** "Just for you": the first page of the endless list at the bottom. */
+  forYou?: ForYouPage;
+}
+
+/** A page of "Just for you" products (18). */
+export interface ForYouPage {
+  items: ProductCard[];
+  page: number;
+  pages: number;
 }
 
 export interface ProductList {

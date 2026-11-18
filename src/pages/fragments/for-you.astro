@@ -1,0 +1,31 @@
+---
+import ProductCard from '@/components/ProductCard.astro';
+import { getForYou } from '@/lib/api';
+
+/**
+ * More "Just for you" cards, as plain HTML: the home page adds them as the shopper scrolls. The same
+ * card as everywhere else, so the buttons and pictures work the same way. Not a page of its own.
+ */
+export const partial = true;
+
+const params = Astro.url.searchParams;
+const page = Math.min(50, Math.max(1, Math.trunc(Number(params.get('page'))) || 1));
+const like = (params.get('like') ?? '')
+  .split(',')
+  .map((s) => s.trim().toLowerCase())
+  .filter((s) => /^[a-z0-9-]{1,120}$/.test(s))
+  .slice(0, 5);
+const data = await getForYou(page, like);
+Astro.response.headers.set('cache-control', 'public, max-age=60, s-maxage=60, stale-while-revalidate=300');
+Astro.response.headers.set('x-robots-tag', 'noindex');
+---
+
+<ul data-page={data.page} data-pages={data.pages}>
+  {
+    data.items.map((p) => (
+      <li>
+        <ProductCard product={p} />
+      </li>
+    ))
+  }
+</ul>

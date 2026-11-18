@@ -1,0 +1,15 @@
+---
+/** Notes in the shopper's browser that they looked at this category (for "Just for you"). Shows nothing. */
+interface Props {
+  slug: string | null | undefined;
+}
+const { slug } = Astro.props;
+---
+
+{slug && <span hidden data-viewed-category={slug} />}
+
+<script>
+  import { rememberCategory } from '@/lib/recent';
+  const slug = document.querySelector<HTMLElement>('[data-viewed-category]')?.dataset.viewedCategory;
+  if (slug) rememberCategory(slug);
+</script>
