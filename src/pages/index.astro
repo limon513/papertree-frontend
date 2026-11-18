@@ -1,5 +1,5 @@
 ---
-import { ArrowRight, Building2, ChevronLeft, ChevronRight, Flame, Sparkles, Truck } from 'lucide-preact';
+import { ArrowRight, BadgeCheck, Building2, ChevronLeft, ChevronRight, Flame, Heart, LayoutGrid, Sparkles, Trophy, Truck } from 'lucide-preact';
 import Layout from '@/layouts/Layout.astro';
 import ProductRail from '@/components/ProductRail.astro';
 import HeroBanners from '@/components/HeroBanners.astro';
@@ -129,18 +129,33 @@ Astro.response.headers.set('cache-control', 'public, max-age=0, s-maxage=60, sta
     </div>
   </section>
 
-  <ProductRail title="Today’s deals" href="/deals/" products={home.deals} tone="deals" priority>
-    <Flame slot="icon" class="size-6 text-marigold-500" />
+  <!-- Each section has its own look: deals yellow, best sellers ranked, new arrivals lime. -->
+  <ProductRail title="Today’s deals" subtitle="The biggest discounts right now" href="/deals/" products={home.deals} tone="deals" priority>
+    <span slot="icon" class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-marigold-300"><Flame class="size-5 text-zinc-900" /></span>
   </ProductRail>
-  {home.bestSellers.length >= 4 && <ProductRail title="Best sellers" href="/shop/?sort=popular" products={home.bestSellers} />}
-  <ProductRail title="New arrivals" href="/new/" products={home.newArrivals} />
+  {
+    home.bestSellers.length >= 4 && (
+      <ProductRail title="Best sellers" subtitle="What everyone is buying" href="/shop/?sort=popular" products={home.bestSellers} ranked>
+        <span slot="icon" class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-600"><Trophy class="size-5 text-white" /></span>
+      </ProductRail>
+    )
+  }
+  <ProductRail title="New arrivals" subtitle="Just landed in the shop" href="/new/" products={home.newArrivals} tone="new">
+    <span slot="icon" class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-lime-400"><Sparkles class="size-5 text-zinc-900" /></span>
+  </ProductRail>
 
   <!-- Brands: a row that moves slowly from left to right, without end. -->
   {
     brands.length > 0 && (
       <section class="later mx-auto max-w-site px-4 py-6 sm:px-6 sm:py-8" aria-labelledby="brands-title">
         <div class="mb-3 flex items-end justify-between gap-3 sm:mb-4">
-          <h2 id="brands-title" class="font-display text-xl font-bold tracking-tight text-zinc-900 sm:text-2xl">Shop by brand</h2>
+          <div class="flex min-w-0 items-center gap-3">
+            <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-zinc-900"><BadgeCheck class="size-5 text-white" /></span>
+            <div class="min-w-0">
+              <h2 id="brands-title" class="font-display text-xl font-bold tracking-tight text-zinc-900 sm:text-2xl">Shop by brand</h2>
+              <p class="truncate text-sm text-zinc-600">Original products from brands you know</p>
+            </div>
+          </div>
           <a href="/brands/" class="flex shrink-0 items-center gap-1 text-sm font-semibold text-brand-700 hover:text-brand-800">
             All brands <ArrowRight class="size-4" />
           </a>
@@ -149,16 +164,65 @@ Astro.response.headers.set('cache-control', 'public, max-age=0, s-maxage=60, sta
       </section>
     )
   }
+
+  <!--
+    Just for you: one set of products. It comes with the page as popular picks; when the shopper looked
+    at some categories lately, their browser swaps in picks from those (src/scripts/for-you.ts).
+  -->
   {
-    home.categoryRows.map((row) => (
-      <ProductRail title={row.category.name} href={links.category([row.category.slug])} products={row.products}>
-        {row.category.icon && <img slot="icon" src={iconUrl(row.category.icon)} alt="" width="28" height="28" loading="lazy" class="size-7" />}
-      </ProductRail>
-    ))
+    home.forYou && home.forYou.items.length > 0 && (
+      <section class="later bg-linear-to-b from-brand-50 to-lime-50/40 py-6 sm:py-8" aria-labelledby="for-you-title" data-for-you>
+        <div class="mx-auto max-w-site px-4 sm:px-6">
+          <div class="mb-3 flex min-w-0 items-center gap-3 sm:mb-4">
+            <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white ring-1 ring-brand-200"><Heart class="size-5 fill-brand-500 text-brand-500" /></span>
+            <div class="min-w-0">
+              <h2 id="for-you-title" class="font-display text-xl font-bold tracking-tight text-zinc-900 sm:text-2xl">Just for you</h2>
+              <p data-for-you-note class="truncate text-sm text-zinc-600">Popular picks to start with</p>
+            </div>
+          </div>
+          <ul data-for-you-list class="home-grid">
+            {home.forYou.items.map((p) => (
+              <li>
+                <ProductCard product={p} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- All products: a mix from every main category, and the way to the whole shop. -->
+  {
+    home.allProducts && home.allProducts.length > 0 && (
+      <section class="later mx-auto max-w-site px-4 py-6 sm:px-6 sm:py-8" aria-labelledby="all-title">
+        <div class="mb-3 flex items-end justify-between gap-3 sm:mb-4">
+          <div class="flex min-w-0 items-center gap-3">
+            <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-zinc-100"><LayoutGrid class="size-5 text-zinc-700" /></span>
+            <div class="min-w-0">
+              <h2 id="all-title" class="font-display text-xl font-bold tracking-tight text-zinc-900 sm:text-2xl">All products</h2>
+              <p class="truncate text-sm text-zinc-600">A little of everything in the shop</p>
+            </div>
+          </div>
+        </div>
+        <ul class="home-grid">
+          {home.allProducts.map((p) => (
+            <li>
+              <ProductCard product={p} />
+            </li>
+          ))}
+        </ul>
+        <div class="mt-6 flex justify-center">
+          <a href="/shop/" class="flex h-12 items-center gap-2 rounded-xl bg-brand-600 px-6 text-sm font-semibold text-white hover:bg-brand-700">
+            View all products <ArrowRight class="size-4" />
+          </a>
+        </div>
+      </section>
+    )
   }
 
   <!-- Wholesale: the business sign-up on the account page (or a question on WhatsApp). -->
-  <section class="mx-auto max-w-site px-4 sm:px-6">
+  <section class="mx-auto max-w-site px-4 pt-4 sm:px-6">
     <div class="flex flex-col items-start gap-4 rounded-3xl bg-linear-to-r from-brand-700 via-brand-600 to-lime-500 p-6 text-white sm:flex-row sm:items-center sm:p-8">
       <Building2 class="size-10 shrink-0 text-brand-300" />
       <div class="flex-1">
@@ -179,29 +243,6 @@ Astro.response.headers.set('cache-control', 'public, max-age=0, s-maxage=60, sta
       </div>
     </div>
   </section>
-
-  <!-- Just for you: an endless grid. The first 18 come with the page; more load as the shopper scrolls. -->
-  {
-    home.forYou && home.forYou.items.length > 0 && (
-      <section class="mx-auto max-w-site px-4 pt-10 pb-6 sm:px-6 sm:pt-12" aria-labelledby="for-you-title" data-for-you data-pages={home.forYou.pages}>
-        <h2 id="for-you-title" class="flex items-center gap-2 font-display text-xl font-bold tracking-tight text-zinc-900 sm:text-2xl">
-          <Sparkles class="size-6 text-lime-500" /> Just for you
-        </h2>
-        <ul data-for-you-list class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-          {home.forYou.items.map((p) => (
-            <li>
-              <ProductCard product={p} />
-            </li>
-          ))}
-        </ul>
-        <div data-for-you-more class="mt-8 flex min-h-11 justify-center">
-          <a href="/shop/" class="flex h-11 items-center rounded-xl bg-white px-5 text-sm font-semibold text-zinc-800 ring-1 ring-zinc-300 hover:ring-zinc-400">
-            See more products
-          </a>
-        </div>
-      </section>
-    )
-  }
 </Layout>
 
 <script>

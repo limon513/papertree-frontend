@@ -3,8 +3,9 @@ import ProductCard from '@/components/ProductCard.astro';
 import { getForYou } from '@/lib/api';
 
 /**
- * More "Just for you" cards, as plain HTML: the home page adds them as the shopper scrolls. The same
- * card as everywhere else, so the buttons and pictures work the same way. Not a page of its own.
+ * "Just for you" cards picked from the shopper's recent categories, as plain HTML: the home page swaps
+ * them in. The same card as everywhere else, so the buttons and pictures work the same way. Not a page
+ * of its own.
  */
 export const partial = true;
 
