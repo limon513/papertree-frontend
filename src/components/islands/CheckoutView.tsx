@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { AlertCircle, ArrowLeft, Banknote, Check, Info, Lock, Minus, Plus, ShoppingBag } from 'lucide-preact';
+import { AlertCircle, ArrowLeft, Banknote, Check, CreditCard, Info, Lock, Minus, Plus, ShoppingBag } from 'lucide-preact';
 import { cart, selectedOf, subtotalOf, useCart } from '@/lib/cart';
 import { useCartCheck } from '@/lib/cart-check';
 import { BulkNote, LineMoney, lineOf } from './BulkNote';
@@ -20,12 +20,15 @@ const input = 'mt-1 h-12 w-full rounded-xl border border-zinc-300 bg-white px-3.
 const label = 'block text-sm font-medium text-zinc-800';
 
 /**
- * Checkout on one page: who, where, how to pay, and the order. Cash on delivery. Details are
+ * Checkout on one page: who, where, how to pay, and the order. Cash on delivery, or pay online now
+ * (SSLCommerz: the shopper goes to its payment page and comes back to their order). Details are
  * remembered on this device, so the next order is a couple of taps. Prices, stock and delivery are
  * worked out again by the shop when the order is placed.
  */
-export default function CheckoutView() {
+export default function CheckoutView({ online = false }: { online?: boolean }) {
   const s = useCart();
+  // How to pay: cash on delivery (most shoppers), or online now when the shop offers it.
+  const [pay, setPay] = useState<'cod' | 'online'>('cod');
   const [ready, setReady] = useState(false);
   const [places, setPlaces] = useState<Places | null>(null);
   const [form, setForm] = useState({ name: '', phone: '', email: '', address: '', note: '', website: '' });
@@ -187,7 +190,7 @@ export default function CheckoutView() {
           address: form.address.trim(),
           note: showNote ? form.note.trim() : '',
           items: rows.map((i) => ({ variantId: i.variantId, quantity: Math.min(i.quantity, 9999) })),
-          paymentMethod: 'cod',
+          paymentMethod: online ? pay : 'cod',
           expectedTotal: total,
           requestId: requestId.current,
           // Only a code the shop said applies (it is checked again with the phone number).
@@ -196,7 +199,7 @@ export default function CheckoutView() {
         }),
       });
       const data = (await res.json().catch(() => null)) as
-        | { number: number; token: string | null }
+        | { number: number; token: string | null; payUrl?: string; payError?: string }
         | { error?: { code?: string; message?: string; fields?: Record<string, string> } }
         | null;
       if (res.ok && data && 'number' in data) {
@@ -205,7 +208,12 @@ export default function CheckoutView() {
         if (!buy) cart.remove(picked.map((i) => i.variantId));
         // The code was used on this order.
         if (cp.ok) cart.setCoupon(null);
-        location.replace(data.token ? `/checkout/thank-you/?o=${encodeURIComponent(data.token)}` : '/');
+        // Paying online: on to SSLCommerz's payment page; it sends the shopper back to their order.
+        if (data.payUrl) {
+          location.href = data.payUrl;
+          return;
+        }
+        location.replace(data.token ? `/checkout/thank-you/?o=${encodeURIComponent(data.token)}${data.payError ? '&payment=error' : ''}` : '/');
         return;
       }
       const error = data && 'error' in data ? data.error : undefined;
@@ -234,6 +242,7 @@ export default function CheckoutView() {
     }
   };
 
+const paying = online && pay === 'online';
   const err = (key: keyof Fields) => errors[key] && <p class="mt-1 text-sm text-red-600">{errors[key]}</p>;
 
   return (
@@ -357,8 +366,8 @@ export default function CheckoutView() {
         {/* Pay */}
         <section class="rounded-2xl bg-white p-4 ring-1 ring-zinc-200 sm:p-5">
           <h2 class="font-display text-lg font-bold">Payment</h2>
-          <label class="mt-3 flex cursor-pointer items-center gap-3 rounded-xl p-3.5 ring-2 ring-brand-600">
-            <input type="radio" name="payment" checked readOnly class="size-4 accent-brand-700" />
+          <label class={cn('mt-3 flex cursor-pointer items-center gap-3 rounded-xl p-3.5', pay === 'cod' || !online ? 'ring-2 ring-brand-600' : 'ring-1 ring-zinc-200 hover:ring-zinc-300')}>
+            <input type="radio" name="payment" value="cod" checked={pay === 'cod' || !online} onChange={() => setPay('cod')} class="size-4 accent-brand-700" />
             <Banknote class="size-5 text-brand-700" />
             <span class="flex-1">
               {ws && ws.advancePercent > 0 ? (
@@ -376,7 +385,20 @@ export default function CheckoutView() {
               )}
             </span>
           </label>
-          {ws && ws.advancePercent > 0 && (
+          {online && (
+            <label class={cn('mt-2 flex cursor-pointer items-center gap-3 rounded-xl p-3.5', pay === 'online' ? 'ring-2 ring-brand-600' : 'ring-1 ring-zinc-200 hover:ring-zinc-300')}>
+              <input type="radio" name="payment" value="online" checked={pay === 'online'} onChange={() => setPay('online')} class="size-4 accent-brand-700" />
+              <CreditCard class="size-5 text-brand-700" />
+              <span class="flex-1">
+                <span class="block font-medium text-zinc-900">{advance !== null ? 'Pay the advance online now' : 'Pay online now'}</span>
+                <span class="block text-sm text-zinc-500">
+                  {advance !== null ? <>Pay <strong class="text-zinc-800">{money(advance)}</strong> now, the rest when it arrives. </> : null}
+                  bKash, Nagad, Rocket, cards or internet banking
+                </span>
+              </span>
+            </label>
+          )}
+          {ws && ws.advancePercent > 0 && (pay === 'cod' || !online) && (
             <div class="mt-3 rounded-xl bg-brand-50 px-3.5 py-3 text-sm text-brand-950">
               <p class="font-medium">How to pay the advance</p>
               {ws.payAdvance ? <p class="mt-1 whitespace-pre-line">{ws.payAdvance}</p> : <p class="mt-1">We call you with the payment details.</p>}
@@ -515,17 +537,26 @@ export default function CheckoutView() {
             class="flex h-13 w-full items-center justify-between gap-3 rounded-xl bg-brand-600 px-5 py-3.5 font-semibold text-white hover:bg-brand-700 disabled:opacity-70"
           >
             <span class="flex items-center gap-2">
-              {sending || waiting ? 'Placing your order…' : (
+              {sending || waiting ? (paying ? 'Opening the payment page…' : 'Placing your order…') : paying ? (
+                <>
+                  <Lock class="size-5" /> {advance !== null ? 'Order and pay the advance' : 'Order and pay now'}
+                </>
+              ) : (
                 <>
                   <Check class="size-5" /> Place order
                 </>
               )}
             </span>
-            <span class="tabular-nums">{priced ? money(total) : s.deliverTo ? '…' : ''}</span>
+            <span class="tabular-nums">{priced ? money(paying && advance !== null ? advance : total) : s.deliverTo ? '…' : ''}</span>
           </button>
         </div>
         <p class="mt-3 flex items-center justify-center gap-1.5 text-xs text-zinc-500">
-          <Lock class="size-3.5" /> {advance !== null ? 'We call to confirm, and send it once the advance arrives.' : 'We call to confirm before sending. No advance payment.'}
+          <Lock class="size-3.5" />{' '}
+          {paying
+            ? 'You pay on SSLCommerz’s secure page, then come back to your order.'
+            : advance !== null
+              ? 'We call to confirm, and send it once the advance arrives.'
+              : 'We call to confirm before sending. No advance payment.'}
         </p>
       </aside>
     </form>

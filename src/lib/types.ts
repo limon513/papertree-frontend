@@ -54,6 +54,8 @@ export interface Catalog {
   google: GoogleConfig | null;
   /** Content pages linked in the footer. */
   pages?: { title: string; slug: string }[];
+  /** Paying online at checkout (SSLCommerz: bKash, Nagad, cards…). */
+  onlinePayment?: boolean;
   /** The shop's wholesale terms (for the Wholesale page). */
   wholesale?: { advancePercent: number; minOrderAmount: number | null; delivery: 'retail' | 'fixed' | 'free' | 'paid_on_delivery'; deliveryFee: number | null; terms: string | null };
 }
@@ -309,6 +311,14 @@ export interface PlacedOrder {
   districtName: string;
   deliveryTime: string | null;
   paymentMethod: string;
+  /** unpaid, partial, paid, refunded. */
+  paymentStatus?: string;
+  /** Paying online: can it be paid now (and how much: a business's advance, else what is due), and the latest try. */
+  online?: {
+    available: boolean;
+    amount: number;
+    lastTry: { status: 'started' | 'paid' | 'failed' | 'cancelled' | 'mismatch' | 'error'; amount: number; cardType: string | null; sandbox: boolean; at: string } | null;
+  };
   /** Once it is on the way. */
   courier?: string | null;
   trackingCode?: string | null;

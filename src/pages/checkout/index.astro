@@ -2,6 +2,9 @@
 import { Lock } from 'lucide-preact';
 import Layout from '@/layouts/Layout.astro';
 import CheckoutView from '@/components/islands/CheckoutView';
+import { getCatalog } from '@/lib/api';
+
+const { onlinePayment } = await getCatalog();
 
 // The cart and the shopper's details live in the browser; the page around them is the same for everyone.
 Astro.response.headers.set('cache-control', 'public, max-age=0, s-maxage=300, stale-while-revalidate=600');
@@ -12,6 +15,6 @@ Astro.response.headers.set('cache-control', 'public, max-age=0, s-maxage=300, st
     <h1 class="flex items-center gap-2 font-display text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
       Checkout <Lock class="size-5 text-zinc-400" />
     </h1>
-    <CheckoutView client:load />
+    <CheckoutView client:load online={!!onlinePayment} />
   </div>
 </Layout>
