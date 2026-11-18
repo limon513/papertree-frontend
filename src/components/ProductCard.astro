@@ -30,6 +30,9 @@ const href = links.product(p.slug);
 ---
 
 <div data-card={p.id} class="pc group">
+  <button type="button" data-wish={p.id} aria-pressed="false" aria-label={`Save ${p.name} to your wishlist`} title="Save to wishlist" class="pc-wish">
+    <svg class="size-[18px]"><use href="#i-heart" /></svg>
+  </button>
   <a href={href} class="pc-pic" data-pics={more ? JSON.stringify(more) : undefined}>
     {
       p.image && (
@@ -49,7 +52,7 @@ const href = links.product(p.slug);
     }
     {
       p.labels && p.labels.length > 0 && (
-        <span class="absolute top-2 right-2 flex max-w-[70%] flex-col items-end gap-1">
+        <span class="absolute top-12 right-2 flex max-w-[70%] flex-col items-end gap-1">
           {p.labels.slice(0, 2).map((t) => (
             <TagBadge name={t.name} color={t.color} />
           ))}

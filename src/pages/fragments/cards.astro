@@ -1,0 +1,32 @@
+---
+import ProductCard from '@/components/ProductCard.astro';
+import { getCards } from '@/lib/api';
+
+/**
+ * Product cards by id, as plain HTML (the wishlist page asks for its saved products). The same card as
+ * everywhere else, so its buttons and pictures work the same way. Public data only; not a page.
+ */
+export const partial = true;
+
+const ids = [
+  ...new Set(
+    (Astro.url.searchParams.get('ids') ?? '')
+      .split(',')
+      .map(Number)
+      .filter((n) => Number.isInteger(n) && n > 0),
+  ),
+].slice(0, 60);
+const { items } = ids.length ? await getCards(ids) : { items: [] };
+Astro.response.headers.set('cache-control', 'public, max-age=60, s-maxage=60, stale-while-revalidate=300');
+Astro.response.headers.set('x-robots-tag', 'noindex');
+---
+
+<ul>
+  {
+    items.map((p) => (
+      <li data-item-of={p.id}>
+        <ProductCard product={p} />
+      </li>
+    ))
+  }
+</ul>

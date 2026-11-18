@@ -1,7 +1,7 @@
 ---
 import '@/styles/global.css';
 import displayFont from '@fontsource/bricolage-grotesque/files/bricolage-grotesque-latin-700-normal.woff2?url';
-import { Flame, Heart, Home, LayoutGrid, PackageSearch, Phone, Search } from 'lucide-preact';
+import { Flame, Home, LayoutGrid, PackageSearch, Phone, Search } from 'lucide-preact';
 import { getCatalog } from '@/lib/api';
 import type { Img } from '@/lib/types';
 import { imageAt, links, SITE_URL, srcSet } from '@/lib/utils';
@@ -16,6 +16,7 @@ import QuickBuy from '@/components/islands/QuickBuy';
 import SignIn from '@/components/islands/SignIn';
 import { CouponLinkNotice } from '@/components/islands/CouponBox';
 import { HeaderAccount, TabAccount } from '@/components/islands/AccountButtons';
+import { WishlistLink } from '@/components/islands/WishButton';
 
 interface Props {
   /** Page title; " | PaperTree" is added unless `fullTitle` is set. */
@@ -113,9 +114,7 @@ const imageOrigin = store.logo ? new URL(imageAt(store.logo, 160)).origin : null
           <a href="/track-order/" aria-label="Track your order" title="Track your order" aria-current={path.startsWith('/track-order') ? 'page' : undefined} class={headerIcon}>
             <PackageSearch class="size-5" strokeWidth={2} />
           </a>
-          <a href="/wishlist/" aria-label="Your wishlist" title="Your wishlist" aria-current={path.startsWith('/wishlist') ? 'page' : undefined} class={headerIcon}>
-            <Heart class="size-5" strokeWidth={2} />
-          </a>
+          <WishlistLink client:idle className={headerIcon} current={path.startsWith('/wishlist')} />
           <HeaderAccount client:idle className="hidden lg:flex" />
           <HeaderCart client:idle className="hidden lg:flex" />
         </div>

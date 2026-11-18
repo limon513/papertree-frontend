@@ -3,6 +3,7 @@ import TagBadge from '@/components/TagBadge.astro';
 import { ChevronRight, ShieldCheck, Wallet } from 'lucide-preact';
 import Layout from '@/layouts/Layout.astro';
 import ViewedCategory from '@/components/ViewedCategory.astro';
+import { WishButton } from '@/components/islands/WishButton';
 import Gallery from '@/components/product/Gallery.astro';
 import ProductRail from '@/components/ProductRail.astro';
 import BuyBox from '@/components/islands/BuyBox';
@@ -104,7 +105,10 @@ Astro.response.headers.set('cache-control', 'public, max-age=0, s-maxage=60, sta
             </a>
           ))}
         </div>
-        <h1 class="mt-1 font-display text-2xl leading-tight font-bold tracking-tight text-zinc-900 sm:text-3xl">{product.name}</h1>
+        <div class="mt-1 flex items-start gap-3">
+          <h1 class="min-w-0 flex-1 font-display text-2xl leading-tight font-bold tracking-tight text-zinc-900 sm:text-3xl">{product.name}</h1>
+          <WishButton client:idle productId={product.id} name={product.name} />
+        </div>
         {
           product.rating && (
             <a href="#reviews" class="mt-1.5 inline-flex items-center gap-2 text-sm text-zinc-600 hover:text-brand-700">

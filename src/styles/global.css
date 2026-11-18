@@ -120,7 +120,14 @@
    * Product card (components/ProductCard.astro). A page can hold 100+ cards: their looks are named here
    * once instead of written out on every card, which keeps pages much lighter.
    */
-  .pc { @apply flex h-full flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-zinc-200 transition duration-200 hover:shadow-lg hover:shadow-zinc-900/8 hover:ring-zinc-300; }
+  .pc { @apply relative flex h-full flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-zinc-200 transition duration-200 hover:shadow-lg hover:shadow-zinc-900/8 hover:ring-zinc-300; }
+  /* The wishlist heart, on the picture's corner (a button beside the link, so a tap never opens the product). */
+  .pc-wish {
+    @apply absolute top-2 right-2 z-10 flex size-9 cursor-pointer items-center justify-center rounded-full bg-white/90 text-zinc-500 shadow-sm ring-1 ring-zinc-200 backdrop-blur transition hover:text-rose-500 active:scale-90;
+    & svg { fill: none; }
+    &[aria-pressed='true'] { @apply text-rose-500 ring-rose-200; }
+    &[aria-pressed='true'] svg { fill: currentColor; }
+  }
   .pc-pic { @apply relative block aspect-square overflow-hidden border-b border-zinc-100 bg-zinc-50; }
   .pc-img { @apply size-full object-contain p-3 transition duration-300; }
   .pc-zoom { @apply group-hover:scale-[1.04]; }

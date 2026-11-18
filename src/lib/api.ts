@@ -1,5 +1,5 @@
 import { API_URL } from 'astro:env/server';
-import type { Catalog, ContentPage, ForYouPage, HomeData, PlacedOrder, Product, ProductList, ReviewList } from './types';
+import type { Catalog, ContentPage, ForYouPage, HomeData, ProductCard as ProductCardData, PlacedOrder, Product, ProductList, ReviewList } from './types';
 
 const API = API_URL.replace(/\/$/, '');
 
@@ -71,6 +71,8 @@ async function get<T>(path: string, ttl = 60): Promise<T> {
 
 export const getCatalog = () => get<Catalog>('/catalog', 300);
 export const getHome = () => get<HomeData>('/home', 60);
+/** Product cards by id, in that order (wishlist page). Products no longer for sale are left out. */
+export const getCards = (ids: number[]) => get<{ items: ProductCardData[] }>(`/cards?ids=${ids.join(',')}`, 60);
 /** A page of "Just for you" (like: category slugs the shopper looked at lately). */
 export const getForYou = (page: number, like: string[]) =>
   get<ForYouPage>(`/for-you?page=${page}${like.length ? `&like=${encodeURIComponent(like.join(','))}` : ''}`, 60);
