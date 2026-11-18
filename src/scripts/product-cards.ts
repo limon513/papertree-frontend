@@ -3,6 +3,7 @@ import { loadMe, me } from '@/lib/account';
 import { cart, cartState, loadSaved, type CartItem } from '@/lib/cart';
 import { money } from '@/lib/utils';
 import { wholesalePrices } from '@/lib/wholesale';
+import { saved, toggleWish } from '@/lib/wishlist';
 
 /**
  * Every product card on the page, run by this one small script (no app per card):
@@ -11,6 +12,7 @@ import { wholesalePrices } from '@/lib/wholesale';
  * - Products with options: both open the "choose options" window (or the product page, if the
  *   window is not ready yet).
  * - Computers: moving the mouse across the picture shows the product's other pictures.
+ * - The heart: saves the product to the wishlist (a guest signs in first).
  */
 type Box = HTMLElement & { _item?: Omit<CartItem, 'quantity'> };
 declare global {
@@ -23,6 +25,15 @@ declare global {
 const itemOf = (box: Box) => (box._item ??= JSON.parse(box.dataset.item!) as Omit<CartItem, 'quantity'>);
 
 document.addEventListener('click', (e) => {
+  const heart = (e.target as Element).closest<HTMLButtonElement>('[data-wish]');
+  if (heart) {
+    e.preventDefault();
+    heart.classList.remove('animate-pop');
+    void heart.offsetWidth;
+    heart.classList.add('animate-pop');
+    void toggleWish(Number(heart.dataset.wish));
+    return;
+  }
   const button = (e.target as Element).closest<HTMLButtonElement>('[data-act]');
   const box = button?.closest<Box>('[data-item], [data-quick]');
   if (!button || !box) return;
@@ -40,9 +51,23 @@ document.addEventListener('click', (e) => {
 // The bubble on each cart icon: how many of this product are in the cart (all its options together).
 effect(() => bubbles(cartState.value.items));
 
-// Cards added later (the home page's "Just for you" list): their bubbles and business prices too.
+// The hearts: filled for saved products.
+function hearts(ids: Set<number>) {
+  for (const h of document.querySelectorAll<HTMLButtonElement>('[data-wish]')) {
+    const on = ids.has(Number(h.dataset.wish));
+    if (h.getAttribute('aria-pressed') === String(on)) continue;
+    h.setAttribute('aria-pressed', String(on));
+    const name = h.getAttribute('aria-label')!.replace(/^(Save|Remove) /, '').replace(/ (to|from) your wishlist$/, '');
+    h.setAttribute('aria-label', on ? `Remove ${name} from your wishlist` : `Save ${name} to your wishlist`);
+    h.title = on ? 'Saved: tap to remove' : 'Save to wishlist';
+  }
+}
+effect(() => hearts(saved.value));
+
+// Cards added later (the home page's "Just for you" list): their bubbles, hearts and business prices too.
 document.addEventListener('pt:cards', () => {
   bubbles(cartState.peek().items);
+  hearts(saved.peek());
   if (me.peek()?.business) void wholesaleCards();
 });
 
