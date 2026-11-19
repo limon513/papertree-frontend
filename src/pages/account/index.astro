@@ -1,6 +1,10 @@
 ---
 import Layout from '@/layouts/Layout.astro';
 import AccountView from '@/components/islands/AccountView';
+import NotificationSettings from '@/components/islands/NotificationSettings';
+import { getCatalog } from '@/lib/api';
+
+const { push } = await getCatalog();
 
 // The page is the same for everyone; who is signed in is asked by the browser.
 Astro.response.headers.set('cache-control', 'public, max-age=0, s-maxage=300, stale-while-revalidate=600');
@@ -10,5 +14,6 @@ Astro.response.headers.set('cache-control', 'public, max-age=0, s-maxage=300, st
   <div class="mx-auto max-w-site px-4 py-5 sm:px-6 sm:py-8">
     <h1 class="font-display text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">Your account</h1>
     <AccountView client:load />
+    <NotificationSettings client:idle config={push ?? null} />
   </div>
 </Layout>

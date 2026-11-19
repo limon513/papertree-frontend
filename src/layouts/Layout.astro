@@ -17,6 +17,7 @@ import SignIn from '@/components/islands/SignIn';
 import { CouponLinkNotice } from '@/components/islands/CouponBox';
 import { HeaderAccount, TabAccount } from '@/components/islands/AccountButtons';
 import { WishlistLink } from '@/components/islands/WishButton';
+import PushAsk from '@/components/islands/PushAsk';
 
 interface Props {
   /** Page title; " | PaperTree" is added unless `fullTitle` is set. */
@@ -69,6 +70,11 @@ const imageOrigin = store.logo ? new URL(imageAt(store.logo, 160)).origin : null
     <meta name="description" content={pageDescription} />
     {noindex ? <meta name="robots" content="noindex, follow" /> : <link rel="canonical" href={canonicalUrl} />}
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <!-- Add to Home Screen (and push notifications on iPhone, which need it). -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="PaperTree" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <link rel="preload" href={displayFont} as="font" type="font/woff2" crossorigin />
     {imageOrigin && <link rel="preconnect" href={imageOrigin} />}
     <meta property="og:site_name" content={`${store.name} Bangladesh`} />
@@ -187,5 +193,7 @@ const imageOrigin = store.logo ? new URL(imageAt(store.logo, 160)).origin : null
     <QuickBuy client:idle />
     <SignIn client:idle google={catalog.google ?? null} />
     <CouponLinkNotice client:idle />
+    <!-- After a first saved product: a short ask for alerts (and keeps this device's alerts linked). -->
+    <PushAsk client:idle config={catalog.push ?? null} variant="wishlist" />
   </body>
 </html>

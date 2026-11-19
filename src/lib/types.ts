@@ -39,6 +39,16 @@ export interface StoreInfo {
 }
 
 /** Firebase web settings for "Continue with Google" (public by design). */
+/** Firebase web settings for push notifications (public by design). */
+export interface PushConfig {
+  apiKey: string;
+  authDomain: string;
+  projectId: string;
+  appId: string;
+  messagingSenderId: string;
+  vapidKey: string;
+}
+
 export interface GoogleConfig {
   apiKey: string;
   authDomain: string;
@@ -56,6 +66,8 @@ export interface Catalog {
   pages?: { title: string; slug: string }[];
   /** Paying online at checkout (SSLCommerz: bKash, Nagad, cards…). */
   onlinePayment?: boolean;
+  /** Push notifications: the Firebase web settings to turn them on. null when off. */
+  push?: PushConfig | null;
   /** The shop's wholesale terms (for the Wholesale page). */
   wholesale?: { advancePercent: number; minOrderAmount: number | null; delivery: 'retail' | 'fixed' | 'free' | 'paid_on_delivery'; deliveryFee: number | null; terms: string | null };
 }

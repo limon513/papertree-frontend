@@ -69,6 +69,8 @@ async function send(productId: number, on: boolean) {
     if (!res.ok && res.status !== 404) throw new Error(String(res.status));
     // A product no longer for sale cannot be saved.
     if (res.status === 404 && on) saved.value = before;
+    // Saved: the page may offer alerts for saved items (PushAsk), at a calm moment like this.
+    if (res.ok && on) document.dispatchEvent(new Event('pt:wish-saved'));
     return res.ok;
   } catch {
     saved.value = before;
