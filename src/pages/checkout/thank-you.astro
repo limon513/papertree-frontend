@@ -3,6 +3,7 @@ import { AlertTriangle, Banknote, CheckCircle2, CreditCard, Loader2, MessageCirc
 import Layout from '@/layouts/Layout.astro';
 import { ParcelCard } from '@/components/islands/TrackOrder';
 import PayOnline from '@/components/islands/PayOnline';
+import PushAsk from '@/components/islands/PushAsk';
 import { getCatalog, getOrder, NotFound } from '@/lib/api';
 import type { PlacedOrder } from '@/lib/types';
 import { imageAt, money } from '@/lib/utils';
@@ -15,7 +16,7 @@ try {
 } catch (err) {
   if (!(err instanceof NotFound)) throw err;
 }
-const { store } = await getCatalog();
+const { store, push } = await getCatalog();
 // Personal: never kept by the browser cache or the CDN.
 Astro.response.headers.set('cache-control', 'private, no-store');
 if (!order) Astro.response.status = 404;
@@ -163,6 +164,7 @@ const whatsapp = order && store.whatsapp ? `https://wa.me/88${store.whatsapp}?te
                 </span>
               </li>
             </ol>
+            <PushAsk client:idle config={push ?? null} variant="order" />
             </>
           )}
 
