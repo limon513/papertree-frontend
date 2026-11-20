@@ -1,0 +1,314 @@
+---
+import { Boxes, Handshake, Megaphone, PhoneCall, Send, Store, Truck, Warehouse } from 'lucide-preact';
+import Layout from '@/layouts/Layout.astro';
+import { getCatalog } from '@/lib/api';
+import { API_PUBLIC_URL } from '@/lib/utils';
+
+/**
+ * "Sell with us": for brands, makers and wholesalers who want to sell through the shop. Two ways to
+ * work together, three steps, and a short form (it goes to admin → Requests & Leads → Sell with us).
+ * A lead only: staff call back and agree the terms.
+ */
+const { store } = await getCatalog();
+const whatsapp = store.whatsapp
+  ? `https://wa.me/88${store.whatsapp.replace(/\D/g, '').replace(/^88/, '')}?text=${encodeURIComponent(`Hello ${store.name}, I want to sell my products through your shop.`)}`
+  : null;
+const ways = [
+  {
+    key: 'wholesale',
+    Icon: Warehouse,
+    title: 'Supply us',
+    text: 'We buy your products at wholesale price and keep them in our stock. We sell, pack and deliver.',
+  },
+  {
+    key: 'brand',
+    Icon: Truck,
+    title: 'We list, you supply per order',
+    text: 'Your products are on our website without stock on our side. When someone orders, we send you a purchase order and you deliver to us or straight to the customer.',
+  },
+];
+const why = [
+  { Icon: Store, title: 'Shoppers across Bangladesh', text: 'Retail customers, shops, schools and offices order from us in all 64 districts.' },
+  { Icon: Megaphone, title: 'Your brand on show', text: 'Your own brand page, your products in search, deals and new arrivals.' },
+  { Icon: Boxes, title: 'We do the selling', text: 'Website, orders, payments and customer calls are handled by our team.' },
+];
+const steps = [
+  { Icon: Send, title: 'Tell us', text: 'Fill in the short form below: who you are and what you sell.' },
+  { Icon: PhoneCall, title: 'We call you', text: 'Our team looks at your products and calls you, usually within a few working days.' },
+  { Icon: Handshake, title: 'Agree and start', text: 'We agree prices, delivery and terms together, then your products go live.' },
+];
+const input = 'mt-1 h-11 w-full rounded-xl border border-zinc-300 bg-white px-3 text-[15px] font-normal aria-[invalid=true]:border-red-500';
+const label = 'block text-sm font-medium text-zinc-800';
+const err = 'mt-1 hidden text-sm font-normal text-red-600';
+Astro.response.headers.set('cache-control', 'public, max-age=0, s-maxage=300, stale-while-revalidate=600');
+---
+
+<Layout
+  title="Sell with us: for brands and suppliers"
+  description={`Make or supply stationery, paper or art supplies? Sell through ${store.name} to shoppers, shops, schools and offices across Bangladesh. Tell us about your products in a minute.`}
+  canonical="/sell-with-us/"
+>
+  <!-- Top -->
+  <section class="bg-linear-to-br from-brand-800 via-brand-700 to-brand-500 text-white">
+    <div class="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
+      <p class="flex items-center gap-2 text-sm font-semibold tracking-wide text-brand-200 uppercase"><Handshake class="size-4" /> Sell with us</p>
+      <h1 class="mt-2 max-w-2xl font-display text-3xl font-bold tracking-tight sm:text-4xl">Sell your products through {store.name}</h1>
+      <p class="mt-3 max-w-2xl text-brand-100">
+        Brands, makers and wholesalers of stationery, paper and art supplies: reach shoppers, shops, schools and offices across Bangladesh.
+      </p>
+      <div class="mt-6 flex flex-wrap gap-3">
+        <a href="#tell-us" class="flex h-11 items-center rounded-xl bg-white px-5 font-semibold text-brand-800 hover:bg-brand-50">Tell us about your products</a>
+        {
+          whatsapp && (
+            <a href={whatsapp} target="_blank" rel="noopener noreferrer" class="flex h-11 items-center rounded-xl px-5 font-semibold text-white ring-1 ring-white/40 hover:bg-white/10">
+              WhatsApp us
+            </a>
+          )
+        }
+      </div>
+    </div>
+  </section>
+
+  <div class="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-12">
+    <!-- Two ways -->
+    <section aria-labelledby="ways">
+      <h2 id="ways" class="font-display text-2xl font-bold">Two ways to work with us</h2>
+      <ul class="mt-5 grid gap-4 sm:grid-cols-2">
+        {
+          ways.map(({ Icon, title, text }) => (
+            <li class="rounded-2xl bg-white p-5 ring-1 ring-zinc-200">
+              <span class="flex size-11 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
+                <Icon class="size-6" />
+              </span>
+              <h3 class="mt-3 font-semibold text-zinc-900">{title}</h3>
+              <p class="mt-1 text-sm text-zinc-600">{text}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <!-- Why -->
+    <section class="mt-12" aria-labelledby="why">
+      <h2 id="why" class="font-display text-2xl font-bold">Why sell with us</h2>
+      <ul class="mt-5 grid gap-3 sm:grid-cols-3">
+        {
+          why.map(({ Icon, title, text }) => (
+            <li class="rounded-2xl bg-brand-50 p-4">
+              <Icon class="size-6 text-brand-700" />
+              <p class="mt-2 font-semibold text-zinc-900">{title}</p>
+              <p class="mt-0.5 text-sm text-zinc-600">{text}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <!-- How -->
+    <section class="mt-12" aria-labelledby="how">
+      <h2 id="how" class="font-display text-2xl font-bold">How it works</h2>
+      <ol class="mt-5 grid gap-4 sm:grid-cols-3">
+        {
+          steps.map(({ Icon, title, text }, i) => (
+            <li class="rounded-2xl bg-white p-5 ring-1 ring-zinc-200">
+              <span class="flex items-center gap-3">
+                <span class="flex size-9 items-center justify-center rounded-full bg-brand-600 text-sm font-bold text-white">{i + 1}</span>
+                <Icon class="size-5 text-brand-700" />
+              </span>
+              <h3 class="mt-3 font-semibold text-zinc-900">{title}</h3>
+              <p class="mt-1 text-sm text-zinc-600">{text}</p>
+            </li>
+          ))
+        }
+      </ol>
+    </section>
+
+    <!-- The form -->
+    <section id="tell-us" class="mt-12 scroll-mt-28" aria-labelledby="form-title">
+      <form data-supplier-form data-api={API_PUBLIC_URL} novalidate class="rounded-3xl bg-white p-5 ring-1 ring-zinc-200 sm:p-8">
+        <div data-fields>
+          <h2 id="form-title" class="font-display text-2xl font-bold">Tell us about your products</h2>
+          <p class="mt-1 text-sm text-zinc-500">It takes a minute. We call you back; nothing is listed until we agree.</p>
+
+          <div class="mt-6 grid gap-4 sm:grid-cols-2">
+            <label class={label}>
+              Business or brand name
+              <input name="businessName" autocomplete="organization" maxlength="120" class={input} />
+              <span data-error="businessName" class={err}></span>
+            </label>
+            <label class={label}>
+              Your name
+              <input name="contactName" autocomplete="name" maxlength="100" class={input} />
+              <span data-error="contactName" class={err}></span>
+            </label>
+            <label class={label}>
+              Phone
+              <input name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="01XXXXXXXXX" maxlength="20" class={input} />
+              <span data-error="phone" class={err}></span>
+            </label>
+            <label class={label}>
+              Email <span class="font-normal text-zinc-400">(optional)</span>
+              <input name="email" type="email" autocomplete="email" maxlength="200" class={input} />
+              <span data-error="email" class={err}></span>
+            </label>
+          </div>
+
+          <label class:list={[label, 'mt-4']}>
+            What do you make or sell?
+            <textarea name="products" rows="3" maxlength="1000" placeholder="e.g. Handmade notebooks and diaries, about 40 designs" class:list={[input, 'h-auto py-2']}></textarea>
+            <span data-error="products" class={err}></span>
+          </label>
+
+          <fieldset class="mt-4">
+            <legend class="text-sm font-medium text-zinc-800">How would you like to work with us? <span class="font-normal text-zinc-400">(choose any)</span></legend>
+            <div class="mt-2 grid gap-2 sm:grid-cols-3">
+              {
+                [
+                  ['wholesale', 'Supply you at wholesale price'],
+                  ['brand', 'You list, I supply per order'],
+                  ['unsure', 'Not sure yet'],
+                ].map(([value, text]) => (
+                  <label class="flex cursor-pointer items-start gap-2.5 rounded-xl border border-zinc-200 px-3 py-2.5 text-sm text-zinc-800 has-checked:border-brand-500 has-checked:bg-brand-50">
+                    <input type="checkbox" name="ways" value={value} class="mt-0.5 size-4 accent-brand-600" />
+                    {text}
+                  </label>
+                ))
+              }
+            </div>
+          </fieldset>
+
+          <div class="mt-4 grid gap-4 sm:grid-cols-2">
+            <label class={label}>
+              City or district <span class="font-normal text-zinc-400">(optional)</span>
+              <input name="location" autocomplete="address-level2" maxlength="100" placeholder="e.g. Dhaka" class={input} />
+            </label>
+            <label class={label}>
+              Website or Facebook page <span class="font-normal text-zinc-400">(optional)</span>
+              <input name="link" inputmode="url" maxlength="300" placeholder="facebook.com/yourpage" class={input} />
+              <span data-error="link" class={err}></span>
+            </label>
+          </div>
+
+          <label class:list={[label, 'mt-4']}>
+            Anything else? <span class="font-normal text-zinc-400">(optional)</span>
+            <textarea name="message" rows="3" maxlength="2000" class:list={[input, 'h-auto py-2']}></textarea>
+          </label>
+
+          <!-- Only bots fill this box (it is hidden from people). -->
+          <input name="website" tabindex="-1" autocomplete="off" aria-hidden="true" class="absolute -left-[9999px] size-px opacity-0" />
+          <p data-error="form" class="mt-4 hidden rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"></p>
+          <button type="submit" class="mt-5 h-12 w-full rounded-xl bg-brand-600 font-semibold text-white hover:bg-brand-700 disabled:opacity-60 sm:w-auto sm:px-8">Send</button>
+        </div>
+
+        <div data-sent hidden role="status" class="py-6 text-center">
+          <span class="mx-auto flex size-14 items-center justify-center rounded-full bg-brand-100 text-brand-700"><Handshake class="size-7" /></span>
+          <p class="mt-3 font-display text-xl font-bold text-brand-800">Thank you! We got your details.</p>
+          <p class="mt-1 text-zinc-600">Our team will call you on <span data-phone class="font-medium text-zinc-900"></span> soon.</p>
+        </div>
+      </form>
+    </section>
+
+    <!-- Questions -->
+    <section class="mt-12" aria-labelledby="faq">
+      <h2 id="faq" class="font-display text-2xl font-bold">Questions</h2>
+      <div class="mt-4 divide-y divide-zinc-200 rounded-2xl bg-white ring-1 ring-zinc-200">
+        {
+          [
+            ['Do I need to be a big brand?', 'No. Makers, small businesses, importers and wholesalers are all welcome.'],
+            ['What does it cost?', 'Prices and terms are agreed with each supplier when we talk. Nothing is fixed before that.'],
+            ['Who delivers to the customer?', 'If you supply us, we do. If we list and you supply per order, you deliver to our shop or straight to the customer, whichever we agree.'],
+            ['How long until my products are live?', 'Once we agree, we add your products and photos. Usually within a week.'],
+          ].map(([q, a]) => (
+            <details class="group px-5 py-4">
+              <summary class="cursor-pointer list-none font-medium text-zinc-900 marker:hidden">
+                <span class="flex items-center justify-between gap-3">
+                  {q}
+                  <span class="text-zinc-400 transition group-open:rotate-45" aria-hidden="true">+</span>
+                </span>
+              </summary>
+              <p class="mt-2 text-sm text-zinc-600">{a}</p>
+            </details>
+          ))
+        }
+      </div>
+    </section>
+  </div>
+</Layout>
+
+<script>
+  for (const form of document.querySelectorAll<HTMLFormElement>('form[data-supplier-form]')) {
+    const field = (name: string) => form.elements.namedItem(name) as HTMLInputElement | null;
+    const value = (name: string) => (field(name)?.value ?? '').trim();
+    const button = form.querySelector<HTMLButtonElement>('button[type=submit]')!;
+    const errors = form.querySelectorAll<HTMLElement>('[data-error]');
+    const show = (fields: Record<string, string>) => {
+      for (const el of errors) {
+        const message = fields[el.dataset.error!];
+        el.textContent = message ?? '';
+        el.classList.toggle('hidden', !message);
+        field(el.dataset.error!)?.setAttribute?.('aria-invalid', String(!!message));
+      }
+      // The first problem in view, so a long form does not hide it.
+      const first = [...errors].find((el) => !el.classList.contains('hidden'));
+      first?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    };
+
+    // Typing in a box clears its message at once (no red under a box that is already fixed).
+    form.addEventListener('input', (e) => {
+      const name = (e.target as HTMLInputElement).name;
+      const el = form.querySelector<HTMLElement>(`[data-error="${name}"]`);
+      if (!el || el.classList.contains('hidden')) return;
+      el.classList.add('hidden');
+      field(name)?.setAttribute?.('aria-invalid', 'false');
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const body = {
+        businessName: value('businessName'),
+        contactName: value('contactName'),
+        phone: value('phone'),
+        email: value('email'),
+        location: value('location'),
+        products: value('products'),
+        ways: [...form.querySelectorAll<HTMLInputElement>('input[name=ways]:checked')].map((i) => i.value),
+        link: value('link'),
+        message: value('message'),
+        website: field('website')?.value ?? '',
+      };
+      // Quick checks first: no wait for an obvious gap.
+      const missing: Record<string, string> = {};
+      if (body.businessName.length < 2) missing.businessName = 'Enter your business or brand name';
+      if (!body.contactName) missing.contactName = 'Enter your name';
+      if (!body.phone) missing.phone = 'Enter your phone number';
+      if (body.products.length < 3) missing.products = 'Tell us what you sell';
+      show(missing);
+      if (Object.keys(missing).length) return;
+
+      button.disabled = true;
+      button.textContent = 'Sending…';
+      try {
+        const res = await fetch(`${form.dataset.api}/v1/store/supplier-leads`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) {
+          const error = ((await res.json().catch(() => null)) as { error?: { message?: string; fields?: Record<string, string> } } | null)?.error;
+          show(error?.fields && Object.keys(error.fields).length ? error.fields : { form: error?.message ?? 'Could not send. Please try again.' });
+          return;
+        }
+        form.querySelector<HTMLElement>('[data-phone]')!.textContent = body.phone;
+        form.querySelector<HTMLElement>('[data-fields]')!.hidden = true;
+        const sent = form.querySelector<HTMLElement>('[data-sent]')!;
+        sent.hidden = false;
+        sent.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      } catch {
+        show({ form: 'No connection. Check your internet and try again.' });
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Send';
+      }
+    });
+  }
+</script>
