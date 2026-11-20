@@ -8,6 +8,8 @@ import { imageAt, links, SITE_URL, srcSet } from '@/lib/utils';
 import CategoriesMenu from '@/components/CategoriesMenu.astro';
 import Footer from '@/components/Footer.astro';
 import IconSprite from '@/components/IconSprite.astro';
+import StaffBanner from '@/components/islands/StaffBanner';
+import ActivityPing from '@/components/islands/ActivityPing';
 import SearchBox from '@/components/islands/SearchBox';
 import { HeaderCart, TabCart } from '@/components/islands/CartButtons';
 import { DeliverToButton, DeliverToDialog } from '@/components/islands/DeliverTo';
@@ -36,10 +38,12 @@ interface Props {
   query?: string;
   /** Put the cursor in the search box (the empty search page). */
   focusSearch?: boolean;
+  /** A product page: the product a signed-in customer is looking at (their activity, for staff). */
+  productId?: number;
   /** The main category this page belongs to (product pages), for the highlighted menu item. */
   section?: string;
 }
-const { title, fullTitle = false, description, canonical, image, noindex = false, jsonLd = [], query = '', focusSearch = false, section } = Astro.props;
+const { title, fullTitle = false, description, canonical, image, noindex = false, jsonLd = [], query = '', focusSearch = false, section, productId } = Astro.props;
 const catalog = await getCatalog();
 const { store, categories } = catalog;
 const path = Astro.url.pathname;
@@ -89,6 +93,8 @@ const imageOrigin = store.logo ? new URL(imageAt(store.logo, 160)).origin : null
   </head>
   <body class="font-sans">
     <IconSprite />
+    <StaffBanner client:idle />
+    <ActivityPing client:idle productId={productId} />
     <a href="#main" class="sr-only rounded-full bg-brand-600 px-4 py-2 text-white focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50">Skip to content</a>
     <header class="sticky top-0 z-40 border-b border-zinc-200/80 bg-white/95 backdrop-blur">
       <div class="mx-auto flex max-w-site items-center gap-3 px-4 py-2.5 sm:px-6 lg:gap-6">

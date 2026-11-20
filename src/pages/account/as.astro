@@ -1,0 +1,11 @@
+---
+import Layout from '@/layouts/Layout.astro';
+import LoginAs from '@/components/islands/LoginAs';
+
+/** A staff member's one-time "log in as customer" link from the admin (the token is after the #). */
+Astro.response.headers.set('cache-control', 'no-store');
+---
+
+<Layout title="Logging in as the customer" noindex>
+  <LoginAs client:load />
+</Layout>

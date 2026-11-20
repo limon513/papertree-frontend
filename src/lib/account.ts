@@ -43,6 +43,8 @@ export interface Me {
 
 /** undefined: not known yet. null: signed out. */
 export const me = signal<Me | null | undefined>(undefined);
+/** A staff member logged in as this customer (to help them): the website shows a banner. */
+export const staffView = signal<{ name: string; until: string } | null>(null);
 /** The sign-in window: open, and where to go after (or nothing: stay on the page). */
 export const signInOpen = signal<{ then?: string; reason?: string } | null>(null);
 
@@ -80,8 +82,11 @@ export function loadMe(force = false) {
     }
   }
   loading = api('/me')
-    .then((r) => (r.ok ? (r.json() as Promise<{ customer: Me | null }>) : Promise.reject(new Error(String(r.status)))))
-    .then((d) => remember(d.customer))
+    .then((r) => (r.ok ? (r.json() as Promise<{ customer: Me | null; staff?: { name: string; until: string } | null }>) : Promise.reject(new Error(String(r.status)))))
+    .then((d) => {
+      remember(d.customer);
+      staffView.value = d.customer ? (d.staff ?? null) : null;
+    })
     // No connection: keep what we had (or signed out).
     .catch(() => {
       if (me.value === undefined) me.value = null;
@@ -96,6 +101,7 @@ export function signedIn(value: Me) {
 export async function signOut() {
   await api('/auth/logout', {}).catch(() => null);
   remember(null);
+  staffView.value = null;
 }
 
 /**
