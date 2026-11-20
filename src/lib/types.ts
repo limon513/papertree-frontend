@@ -410,8 +410,8 @@ export interface ReviewList {
 /** A quotation (its page on the website): prices fixed when it was made, valid until a date. */
 export interface Quotation {
   number: string;
-  /** expired: open but past its date. */
-  status: 'open' | 'expired' | 'ordered' | 'cancelled';
+  /** expired: open but past its date. replaced: staff made a newer version (see replacedBy). */
+  status: 'open' | 'expired' | 'ordered' | 'cancelled' | 'replaced';
   type: 'retail' | 'wholesale';
   name: string;
   organisation: string | null;
@@ -423,6 +423,12 @@ export interface Quotation {
   /** Items only, after bulk discounts. */
   subtotal: number;
   bulkDiscount: number;
+  /** Fixed by the shop (0 = free); null: worked out when ordering. */
+  deliveryFee: number | null;
+  /** The shop's terms for this quotation. */
+  terms: string | null;
+  /** The newer version, when this one was replaced. */
+  replacedBy: { number: string; token: string } | null;
   items: {
     variantId: number | null;
     name: string;

@@ -1,5 +1,5 @@
 ---
-import { AlertTriangle, CheckCircle2, Copy, Printer, XCircle } from 'lucide-preact';
+import { AlertTriangle, ArrowRight, CheckCircle2, Copy, Printer, RefreshCw, XCircle } from 'lucide-preact';
 import Layout from '@/layouts/Layout.astro';
 import QuoteOrder from '@/components/islands/QuoteOrder';
 import QuoteRenew from '@/components/islands/QuoteRenew';
@@ -22,6 +22,9 @@ try {
 const { store } = await getCatalog();
 const day = (iso: string) => new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Dhaka' }).format(new Date(iso));
 const pieces = q.items.reduce((n, i) => n + i.quantity, 0);
+// Delivery fixed by the shop (0 = free), else worked out when ordering.
+const fixedDelivery = q.deliveryFee;
+const grand = fixedDelivery === null ? q.subtotal : q.subtotal + fixedDelivery;
 Astro.response.headers.set('cache-control', 'private, no-store');
 ---
 
@@ -51,6 +54,19 @@ Astro.response.headers.set('cache-control', 'private, no-store');
               See the order
             </a>
           )}
+        </div>
+      )
+    }
+    {
+      q.status === 'replaced' && q.replacedBy && (
+        <div class="mb-4 flex flex-wrap items-center gap-3 rounded-2xl bg-sky-50 p-4 text-sky-900 ring-1 ring-sky-200" data-no-print>
+          <RefreshCw class="size-5 shrink-0" />
+          <p class="min-w-0 flex-1 text-sm">
+            <strong>This quotation was updated.</strong> Please see the new version, {q.replacedBy.number}.
+          </p>
+          <a href={`/quotation/${q.replacedBy.token}/`} class="flex h-10 items-center gap-1.5 rounded-xl bg-sky-700 px-4 text-sm font-semibold text-white hover:bg-sky-800">
+            See {q.replacedBy.number} <ArrowRight class="size-4" />
+          </a>
         </div>
       )
     }
@@ -155,16 +171,39 @@ Astro.response.headers.set('cache-control', 'private, no-store');
             </div>
           )
         }
+        {
+          fixedDelivery !== null && (
+            <>
+              <div class="flex justify-between">
+                <dt class="text-zinc-600">Items</dt>
+                <dd class="tabular-nums">{money(q.subtotal)}</dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-zinc-600">Delivery</dt>
+                <dd class:list={['tabular-nums', fixedDelivery === 0 && 'font-semibold text-brand-700']}>{fixedDelivery === 0 ? 'Free' : money(fixedDelivery)}</dd>
+              </div>
+            </>
+          )
+        }
         <div class="flex justify-between text-base font-bold text-zinc-900">
           <dt>Total</dt>
-          <dd class="tabular-nums">{money(q.subtotal)}</dd>
+          <dd class="tabular-nums">{money(grand)}</dd>
         </div>
-        <p class="text-xs text-zinc-500">Delivery charge not included: it is worked out when you order.</p>
+        {fixedDelivery === null && <p class="text-xs text-zinc-500">Delivery charge not included: it is worked out when you order.</p>}
       </dl>
+
+      {
+        q.terms && (
+          <section class="mt-5 rounded-xl bg-zinc-50 p-4 text-sm print:bg-transparent print:p-0" aria-label="Terms">
+            <p class="text-xs font-semibold tracking-wide text-zinc-500 uppercase">Terms</p>
+            <p class="mt-1 whitespace-pre-line text-zinc-800">{q.terms}</p>
+          </section>
+        )
+      }
 
       <section class="mt-6 border-t border-zinc-200 pt-4 text-xs leading-relaxed text-zinc-500">
         <p>
-          Prices are valid until {day(q.validUntil)}{q.type === 'wholesale' ? ', at your wholesale terms' : ''}. Products are subject to stock when you order. Payment: cash on delivery{q.online ? ', or online (bKash, Nagad, Rocket, card)' : ''}.
+          Prices are valid until {day(q.validUntil)}{q.type === 'wholesale' ? ', at your wholesale terms' : ''}. Products are subject to stock when you order.{fixedDelivery === null ? '' : fixedDelivery === 0 ? ' Delivery is free.' : ` Delivery: ${money(fixedDelivery)}.`} Payment: cash on delivery{q.online ? ', or online (bKash, Nagad, Rocket, card)' : ''}.
         </p>
         <p class="mt-1">Questions? Call {store.phone ?? 'us'}{store.email ? ` or email ${store.email}` : ''} and mention {q.number}.</p>
       </section>
