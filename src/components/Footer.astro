@@ -4,9 +4,10 @@ import type { Catalog } from '@/lib/types';
 import { imageAt } from '@/lib/utils';
 
 /**
- * Site footer: the client's minimal footer (2026-11-20), in yellow.
+ * Site footer: the client's minimal footer (2026-11-20), in the soft lime of the New arrivals band.
  * - Left: the logo, contact details, then round Facebook, WhatsApp and phone buttons.
  * - Right: the information pages written in the admin (Pages marked "show in footer", in their order),
+ *   "Sell with us",
  *   then Blog and Affiliate marketing, both coming soon.
  * Under it the SSLCommerz "Pay with" strip and the copyright line.
  */
@@ -17,10 +18,10 @@ const { store, pages } = Astro.props.catalog;
 const whatsapp = store.whatsapp ? `https://wa.me/88${store.whatsapp.replace(/\D/g, '').replace(/^88/, '')}` : null;
 const facebook = store.social.facebook;
 const SOON = ['Blog', 'Affiliate marketing'];
-const round = 'flex size-11 items-center justify-center rounded-full bg-zinc-900 text-white transition-colors hover:bg-brand-700';
+const round = 'flex size-11 items-center justify-center rounded-full bg-brand-600 text-white transition-colors hover:bg-brand-700';
 ---
 
-<footer class="mt-12 bg-marigold-500 text-sm text-zinc-900">
+<footer class="mt-12 border-t border-lime-200 bg-lime-50 text-sm text-zinc-800">
   <div class="mx-auto grid max-w-site gap-x-12 gap-y-9 px-4 pt-10 pb-9 sm:px-6 md:grid-cols-[minmax(0,1fr)_auto] lg:pt-12">
     <!-- The shop: logo, contact, buttons -->
     <div>
@@ -102,7 +103,7 @@ const round = 'flex size-11 items-center justify-center rounded-full bg-zinc-900
 
     <!-- Information pages -->
     <nav aria-labelledby="footer-info">
-      <h2 id="footer-info" class="text-xs font-bold tracking-[0.15em] text-zinc-900/70 uppercase">Information</h2>
+      <h2 id="footer-info" class="text-xs font-bold tracking-[0.15em] text-brand-800 uppercase">Information</h2>
       <ul class="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 md:gap-x-16 lg:pr-8">
         {
           (pages ?? []).map((p) => (
@@ -113,11 +114,14 @@ const round = 'flex size-11 items-center justify-center rounded-full bg-zinc-900
             </li>
           ))
         }
+        <li>
+          <a href="/sell-with-us/" class="font-medium decoration-2 underline-offset-4 hover:underline">Sell with us</a>
+        </li>
         {
           SOON.map((name) => (
-            <li class="flex flex-wrap items-center gap-x-2 gap-y-1 text-zinc-900/65">
+            <li class="flex flex-wrap items-center gap-x-2 gap-y-1 text-zinc-500">
               {name}
-              <span class="rounded-full bg-zinc-900/10 px-2 py-0.5 text-[11px] font-semibold text-zinc-900/80">Coming soon</span>
+              <span class="rounded-full bg-lime-200/70 px-2 py-0.5 text-[11px] font-semibold text-lime-900">Coming soon</span>
             </li>
           ))
         }
@@ -142,7 +146,7 @@ const round = 'flex size-11 items-center justify-center rounded-full bg-zinc-900
     </div>
   </div>
 
-  <div class="bg-marigold-600">
+  <div class="border-t border-lime-200 bg-lime-100">
     <p class="mx-auto max-w-site px-4 py-3.5 text-xs font-medium sm:px-6">© {new Date().getFullYear()} {store.name} Bangladesh. All rights reserved.</p>
   </div>
 </footer>
