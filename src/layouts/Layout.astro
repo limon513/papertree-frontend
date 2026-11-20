@@ -93,15 +93,14 @@ const imageOrigin = store.logo ? new URL(imageAt(store.logo, 160)).origin : null
     <header class="sticky top-0 z-40 border-b border-zinc-200/80 bg-white/95 backdrop-blur">
       <div class="mx-auto flex max-w-site items-center gap-3 px-4 py-2.5 sm:px-6 lg:gap-6">
         <a href="/" class="flex shrink-0 items-center gap-2" aria-label={`${store.name} home`}>
+          {/* The logo alone (it carries the name); the name in words only if no logo is set. */}
           {
-            store.logo && (
-              <img src={imageAt(store.logo, 160)} srcset={srcSet(store.logo)} sizes="56px" alt="" width={store.logo.width} height={store.logo.height} class="h-10 w-auto sm:h-11" />
+            store.logo ? (
+              <img src={imageAt(store.logo, 160)} srcset={srcSet(store.logo)} sizes="88px" alt="" width={store.logo.width} height={store.logo.height} class="h-12 w-auto lg:h-16" />
+            ) : (
+              <span class="font-display text-lg font-bold tracking-tight text-brand-800 uppercase sm:text-xl">{store.name}</span>
             )
           }
-          <span class="leading-none">
-            <span class="block font-display text-lg font-bold tracking-tight text-brand-800 uppercase sm:text-xl">{store.name}</span>
-            <span class="block text-[10px] font-medium tracking-[0.3em] text-zinc-500 uppercase">Bangladesh</span>
-          </span>
         </a>
         <DeliverToButton client:idle className="hidden w-48 shrink-0 lg:flex" />
         <SearchBox client:idle initial={query} autoFocus={focusSearch} className="hidden max-w-lg flex-1 md:block" />

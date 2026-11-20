@@ -18,9 +18,9 @@
 
   /*
    * Colours (client's choice, 2026-11-17): fresh green 500–600, lime and yellow. The logo keeps its own colours.
-   * - brand (green): buttons and links (600; hover 700), icons and highlights (500), footer (950).
+   * - brand (green): buttons and links (600; hover 700), icons and highlights (500).
    * - lime (Tailwind's own): soft backgrounds, tiles and badges.
-   * - marigold (yellow): deals and savings only.
+   * - marigold (yellow): deals and savings, and the footer (500–600, client's choice 2026-11-20).
    */
   --color-brand-50: #f0fdf4;
   --color-brand-100: #dcfce7;
@@ -40,6 +40,7 @@
   --color-marigold-300: #fde047;
   --color-marigold-400: #facc15;
   --color-marigold-500: #eab308;
+  --color-marigold-600: #ca8a04;
   --color-marigold-700: #a16207;
 
   /* Page width: roomy on big screens (1536px). */
