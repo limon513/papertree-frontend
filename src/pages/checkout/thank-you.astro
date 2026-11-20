@@ -164,7 +164,6 @@ const whatsapp = order && store.whatsapp ? `https://wa.me/88${store.whatsapp}?te
                 </span>
               </li>
             </ol>
-            <PushAsk client:idle config={push ?? null} variant="order" />
             </>
           )}
 
@@ -212,6 +211,8 @@ const whatsapp = order && store.whatsapp ? `https://wa.me/88${store.whatsapp}?te
             )}
           </div>
           <p class="mt-4 text-center text-xs text-zinc-500">Keep this page’s link to see your order again.</p>
+          {/* Right after ordering: the confirmation in a popup, with the offer of alerts. */}
+          <PushAsk client:load config={push ?? null} variant="order" orderNumber={order.number} paid={paidOnline} />
         </>
       )
     }

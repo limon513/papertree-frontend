@@ -25,23 +25,21 @@ self.addEventListener('push', (event) => {
       // The same tag replaces the older alert (one per order, not a pile).
       tag: d.tag || undefined,
       renotify: !!d.tag,
-      data: { url: d.url || '/', id: d.id || '' },
+      data: { url: d.url || '/', tap: d.tap || '' },
     }),
   );
 });
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const { url, id } = event.notification.data || {};
+  const { url, tap } = event.notification.data || {};
   const target = new URL(url || '/', self.location.origin);
   // Only the shop's own pages open from an alert.
   const safe = target.origin === self.location.origin ? target.href : self.location.origin + '/';
   event.waitUntil(
     (async () => {
-      if (id) {
-        // Counts taps on an offer (no personal data).
-        fetch(`${self.location.origin}/push-tap/?id=${encodeURIComponent(id)}`, { method: 'POST', keepalive: true }).catch(() => undefined);
-      }
+      // An offer counts its taps (only a number, nothing personal).
+      if (tap && /^(https:\/\/|http:\/\/localhost)/.test(tap)) fetch(tap, { method: 'POST', mode: 'no-cors', keepalive: true }).catch(() => undefined);
       const open = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
       const same = open.find((c) => c.url === safe);
       if (same) return same.focus();

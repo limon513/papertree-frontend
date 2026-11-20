@@ -77,28 +77,53 @@ async function fcmToken(config: PushConfig) {
 const tell = (path: string, body: object) =>
   fetch(`${API_PUBLIC_URL}/v1/store${path}`, { method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
 
-/** Turn alerts on for this device: the browser asks permission (only now, after the shopper tapped). */
-export async function turnOn(config: PushConfig): Promise<'on' | 'denied' | 'failed'> {
+/** Connects this device with Firebase and the shop (after permission). Tells the page if it did not work. */
+async function connect(config: PushConfig) {
   try {
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') return permission === 'denied' ? 'denied' : 'failed';
     const token = await fcmToken(config);
     const res = await tell('/push/devices', { token, device: deviceName() });
-    if (!res.ok) return 'failed';
+    if (!res.ok) throw new Error(String(res.status));
     store.set(TOKEN, token);
     store.set(CHECKED, String(Date.now()));
-    return 'on';
+    return true;
+  } catch {
+    store.set(TOKEN, null);
+    document.dispatchEvent(new Event('pt:push-failed'));
+    return false;
+  }
+}
+
+/**
+ * Turn alerts on for this device. The browser asks permission (only now, after the shopper tapped);
+ * as soon as it is given the answer is "on" (the page says so at once), and the connection with
+ * Firebase and the shop finishes in the background ("pt:push-failed" if it does not work).
+ */
+export async function turnOn(config: PushConfig): Promise<'on' | 'denied' | 'failed'> {
+  let permission: NotificationPermission;
+  try {
+    permission = await Notification.requestPermission();
   } catch {
     return 'failed';
   }
+  if (permission !== 'granted') return permission === 'denied' ? 'denied' : 'failed';
+  // Marked on at once (the token comes a moment later), so the page can say "on" now.
+  store.set(TOKEN, store.get(TOKEN) ?? 'pending');
+  void connect(config);
+  return 'on';
 }
+
+/** A device whose alerts were turned on but did not connect (shown by the pages that offer alerts). */
+export const onPushFailed = (handler: () => void) => {
+  document.addEventListener('pt:push-failed', handler);
+  return () => document.removeEventListener('pt:push-failed', handler);
+};
 
 /** Turn alerts off for this device. */
 export async function turnOff(config: PushConfig | null) {
   const token = store.get(TOKEN);
   store.set(TOKEN, null);
   store.set(LINKED, null);
-  if (!token) return;
+  if (!token || token === 'pending') return;
   await tell('/push/devices/remove', { token }).catch(() => undefined);
   if (!config) return;
   try {
@@ -117,6 +142,11 @@ export async function turnOff(config: PushConfig | null) {
 export async function keepPushFresh(config: PushConfig | null, customerId: number | null) {
   if (!config || pushState() !== 'on') return;
   const token = store.get(TOKEN)!;
+  // Turned on but the connection did not finish last time: once more now.
+  if (token === 'pending') {
+    await connect(config);
+    return;
+  }
   const linkKey = `${customerId ?? 'guest'}:${token.slice(-12)}`;
   const weekOld = Date.now() - Number(store.get(CHECKED) ?? 0) > 7 * 86_400_000;
   if (weekOld) {
