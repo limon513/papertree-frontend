@@ -1,0 +1,205 @@
+---
+import { AlertTriangle, CheckCircle2, Copy, Printer, XCircle } from 'lucide-preact';
+import Layout from '@/layouts/Layout.astro';
+import QuoteOrder from '@/components/islands/QuoteOrder';
+import QuoteRenew from '@/components/islands/QuoteRenew';
+import { getCatalog, getQuotation, NotFound } from '@/lib/api';
+import type { Quotation } from '@/lib/types';
+import { imageAt, money } from '@/lib/utils';
+
+/**
+ * A quotation, by its secret link: a printable document (letterhead, items, prices, valid until), and
+ * "Order this quotation" while it is valid. Personal: never cached, never in search engines.
+ */
+const token = Astro.params.token!;
+let q: Quotation;
+try {
+  q = await getQuotation(token);
+} catch (err) {
+  if (err instanceof NotFound) return Astro.rewrite('/404/');
+  throw err;
+}
+const { store } = await getCatalog();
+const day = (iso: string) => new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Dhaka' }).format(new Date(iso));
+const pieces = q.items.reduce((n, i) => n + i.quantity, 0);
+Astro.response.headers.set('cache-control', 'private, no-store');
+---
+
+<Layout title={`Quotation ${q.number}`} noindex>
+  <div class="mx-auto max-w-4xl px-4 py-5 sm:px-6 sm:py-8 print:max-w-none print:p-0">
+    <!-- Where it stands -->
+    {
+      q.status === 'expired' && (
+        <div class="mb-4 flex flex-wrap items-center gap-3 rounded-2xl bg-amber-50 p-4 text-amber-900 ring-1 ring-amber-200" data-no-print>
+          <AlertTriangle class="size-5 shrink-0" />
+          <p class="min-w-0 flex-1 text-sm">
+            <strong>This quotation expired on {day(q.validUntil)}.</strong> Prices may have changed since.
+          </p>
+          <QuoteRenew client:idle items={q.items.map((i) => ({ variantId: i.variantId, quantity: i.quantity }))} />
+        </div>
+      )
+    }
+    {
+      q.status === 'ordered' && q.order && (
+        <div class="mb-4 flex flex-wrap items-center gap-3 rounded-2xl bg-brand-50 p-4 text-brand-900 ring-1 ring-brand-200" data-no-print>
+          <CheckCircle2 class="size-5 shrink-0" />
+          <p class="min-w-0 flex-1 text-sm">
+            <strong>Ordered as #{q.order.number}.</strong> Thank you!
+          </p>
+          {q.order.token && (
+            <a href={`/checkout/thank-you/?o=${encodeURIComponent(q.order.token)}`} class="text-sm font-semibold text-brand-800 underline">
+              See the order
+            </a>
+          )}
+        </div>
+      )
+    }
+    {
+      q.status === 'cancelled' && (
+        <div class="mb-4 flex items-center gap-3 rounded-2xl bg-red-50 p-4 text-sm text-red-800 ring-1 ring-red-200" data-no-print>
+          <XCircle class="size-5 shrink-0" /> This quotation was cancelled. Please ask us for a new one.
+        </div>
+      )
+    }
+
+    <!-- The document -->
+    <article class="rounded-2xl bg-white p-5 ring-1 ring-zinc-200 sm:p-8 print:rounded-none print:p-0 print:ring-0" aria-labelledby="q-title">
+      <header class="flex flex-col gap-5 border-b border-zinc-200 pb-5 sm:flex-row sm:items-start sm:justify-between">
+        <div class="flex items-start gap-3">
+          {store.logo && <img src={imageAt(store.logo, 160)} alt="" width={store.logo.width} height={store.logo.height} class="h-14 w-auto" />}
+          <div class="text-sm leading-relaxed text-zinc-600">
+            <p class="font-display text-lg font-bold text-zinc-900">{store.name} Bangladesh</p>
+            {store.address && <p>{store.address}</p>}
+            <p>{[store.phone, store.email].filter(Boolean).join(' · ')}</p>
+          </div>
+        </div>
+        <div class="sm:text-right">
+          <h1 id="q-title" class="font-display text-2xl font-bold tracking-tight text-brand-800">Quotation</h1>
+          <dl class="mt-1 grid grid-cols-[auto_1fr] gap-x-3 text-sm sm:justify-end">
+            <dt class="text-zinc-500">Number</dt>
+            <dd class="font-semibold text-zinc-900">{q.number}</dd>
+            <dt class="text-zinc-500">Date</dt>
+            <dd class="text-zinc-900">{day(q.createdAt)}</dd>
+            <dt class="text-zinc-500">Valid until</dt>
+            <dd class:list={['font-semibold', q.status === 'expired' ? 'text-red-700' : 'text-zinc-900']}>{day(q.validUntil)}</dd>
+          </dl>
+        </div>
+      </header>
+
+      <section class="mt-5 grid gap-1 text-sm sm:grid-cols-2" aria-label="For">
+        <div>
+          <p class="text-xs font-semibold tracking-wide text-zinc-500 uppercase">For</p>
+          <p class="mt-1 font-semibold text-zinc-900">{q.organisation ?? q.name}</p>
+          {q.organisation && <p class="text-zinc-700">{q.name}</p>}
+          <p class="text-zinc-700">{[q.phone, q.email].filter(Boolean).join(' · ')}</p>
+        </div>
+        {
+          q.note && (
+            <div>
+              <p class="text-xs font-semibold tracking-wide text-zinc-500 uppercase">Reference</p>
+              <p class="mt-1 text-zinc-900">{q.note}</p>
+            </div>
+          )
+        }
+      </section>
+
+      <div class="mt-5 overflow-x-auto">
+        <table class="w-full min-w-[560px] text-sm">
+          <thead class="border-y border-zinc-200 text-left text-xs font-semibold tracking-wide text-zinc-500 uppercase">
+            <tr>
+              <th class="w-8 py-2.5 pr-2">#</th>
+              <th class="py-2.5 pr-2">Product</th>
+              <th class="py-2.5 pr-2 text-right">Qty</th>
+              <th class="py-2.5 pr-2 text-right">Price</th>
+              <th class="py-2.5 text-right">Amount</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-zinc-100">
+            {
+              q.items.map((i, n) => (
+                <tr class="break-inside-avoid">
+                  <td class="py-3 pr-2 align-top text-zinc-500">{n + 1}</td>
+                  <td class="py-3 pr-2 align-top">
+                    <div class="flex gap-3">
+                      {i.image && <img src={imageAt(i.image, 160)} alt="" class="size-11 shrink-0 rounded-lg bg-zinc-50 object-cover print:hidden" loading="lazy" />}
+                      <div>
+                        <p class="font-medium text-zinc-900">{i.name}</p>
+                        <p class="text-xs text-zinc-500">{[i.variantLabel, i.sku && `SKU ${i.sku}`].filter(Boolean).join(' · ')}</p>
+                        {i.bulkPercent && <p class="text-xs text-brand-700">Bulk discount {i.bulkPercent}%</p>}
+                      </div>
+                    </div>
+                  </td>
+                  <td class="py-3 pr-2 text-right align-top tabular-nums">{i.quantity}</td>
+                  <td class="py-3 pr-2 text-right align-top whitespace-nowrap tabular-nums">
+                    {money(i.unitPrice)}
+                    {i.regularPrice > i.unitPrice && <span class="block text-xs text-zinc-400 line-through">{money(i.regularPrice)}</span>}
+                  </td>
+                  <td class="py-3 text-right align-top font-medium whitespace-nowrap tabular-nums">{money(i.lineTotal)}</td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <dl class="mt-2 ml-auto max-w-xs space-y-1.5 border-t border-zinc-200 pt-3 text-sm">
+        <div class="flex justify-between">
+          <dt class="text-zinc-600">{q.items.length} products, {pieces} pieces</dt>
+          <dd></dd>
+        </div>
+        {
+          q.bulkDiscount > 0 && (
+            <div class="flex justify-between text-brand-700">
+              <dt>Bulk discounts included</dt>
+              <dd class="tabular-nums">−{money(q.bulkDiscount)}</dd>
+            </div>
+          )
+        }
+        <div class="flex justify-between text-base font-bold text-zinc-900">
+          <dt>Total</dt>
+          <dd class="tabular-nums">{money(q.subtotal)}</dd>
+        </div>
+        <p class="text-xs text-zinc-500">Delivery charge not included: it is worked out when you order.</p>
+      </dl>
+
+      <section class="mt-6 border-t border-zinc-200 pt-4 text-xs leading-relaxed text-zinc-500">
+        <p>
+          Prices are valid until {day(q.validUntil)}{q.type === 'wholesale' ? ', at your wholesale terms' : ''}. Products are subject to stock when you order. Payment: cash on delivery{q.online ? ', or online (bKash, Nagad, Rocket, card)' : ''}.
+        </p>
+        <p class="mt-1">Questions? Call {store.phone ?? 'us'}{store.email ? ` or email ${store.email}` : ''} and mention {q.number}.</p>
+      </section>
+    </article>
+
+    <!-- Actions (not printed) -->
+    <div class="mt-5 flex flex-wrap items-center gap-2" data-no-print>
+      <button type="button" data-print class="flex h-11 items-center gap-2 rounded-xl bg-white px-4 text-sm font-semibold text-zinc-800 ring-1 ring-zinc-300 hover:ring-zinc-400">
+        <Printer class="size-4" /> Print or save as PDF
+      </button>
+      <button type="button" data-copy class="flex h-11 items-center gap-2 rounded-xl bg-white px-4 text-sm font-semibold text-zinc-800 ring-1 ring-zinc-300 hover:ring-zinc-400">
+        <Copy class="size-4" /> <span data-copy-label>Copy the link</span>
+      </button>
+    </div>
+
+    {
+      q.status === 'open' && (
+        <section id="order-it" class="mt-6 scroll-mt-28" data-no-print>
+          <QuoteOrder client:idle token={token} subtotal={q.subtotal} online={q.online} wholesale={q.type === 'wholesale'} buyer={{ name: q.name, phone: q.phone, email: q.email }} />
+        </section>
+      )
+    }
+  </div>
+</Layout>
+
+<script>
+  document.querySelector('[data-print]')?.addEventListener('click', () => window.print());
+  document.querySelector('[data-copy]')?.addEventListener('click', async () => {
+    const label = document.querySelector('[data-copy-label]')!;
+    try {
+      await navigator.clipboard.writeText(location.href);
+      label.textContent = 'Link copied';
+    } catch {
+      label.textContent = 'Copy it from the address bar';
+    }
+    setTimeout(() => (label.textContent = 'Copy the link'), 2500);
+  });
+</script>
