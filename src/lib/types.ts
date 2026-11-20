@@ -406,3 +406,37 @@ export interface ReviewList {
   page: number;
   pages: number;
 }
+
+/** A quotation (its page on the website): prices fixed when it was made, valid until a date. */
+export interface Quotation {
+  number: string;
+  /** expired: open but past its date. */
+  status: 'open' | 'expired' | 'ordered' | 'cancelled';
+  type: 'retail' | 'wholesale';
+  name: string;
+  organisation: string | null;
+  phone: string;
+  email: string | null;
+  note: string | null;
+  createdAt: string;
+  validUntil: string;
+  /** Items only, after bulk discounts. */
+  subtotal: number;
+  bulkDiscount: number;
+  items: {
+    variantId: number | null;
+    name: string;
+    variantLabel: string | null;
+    sku: string | null;
+    image: Img | null;
+    regularPrice: number;
+    unitPrice: number;
+    quantity: number;
+    lineTotal: number;
+    bulkPercent: number | null;
+  }[];
+  /** Once ordered: the order's number and its page token. */
+  order: { number: number; token: string | null } | null;
+  /** Paying online is on. */
+  online: boolean;
+}

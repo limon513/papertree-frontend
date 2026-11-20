@@ -205,3 +205,19 @@ html:has(dialog[open]) {
     bottom: calc(9rem + env(safe-area-inset-bottom));
   }
 }
+
+/* Printing (a quotation, an order): only the page's own content, without the site's header, footer and buttons. */
+@media print {
+  body > header,
+  body > footer,
+  body > nav,
+  [data-no-print] {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+  }
+  @page {
+    margin: 14mm;
+  }
+}

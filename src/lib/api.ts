@@ -1,5 +1,5 @@
 import { API_URL } from 'astro:env/server';
-import type { Catalog, ContentPage, ForYouPage, HomeData, ProductCard as ProductCardData, PlacedOrder, Product, ProductList, ReviewList } from './types';
+import type { Catalog, ContentPage, ForYouPage, HomeData, ProductCard as ProductCardData, PlacedOrder, Product, ProductList, Quotation, ReviewList } from './types';
 
 const API = API_URL.replace(/\/$/, '');
 
@@ -82,6 +82,8 @@ export const getPage = (slug: string) => get<ContentPage>(`/pages/${encodeURICom
 export const getReviews = (slug: string) => get<ReviewList>(`/products/${encodeURIComponent(slug)}/reviews`, 60);
 /** A placed order (thank-you page). Personal: never kept in the cache. */
 export const getOrder = (token: string) => fetchJson<PlacedOrder>(`/orders/${encodeURIComponent(token)}`);
+/** A quotation by its link. Personal: never kept in the cache. */
+export const getQuotation = (token: string) => fetchJson<Quotation>(`/quotations/${encodeURIComponent(token)}`);
 
 export function getProducts(params: Record<string, string | string[] | undefined>) {
   const query = new URLSearchParams();

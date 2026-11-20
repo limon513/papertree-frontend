@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'preact/hooks';
-import { ArrowRight, Info, MapPin, Minus, Plus, ShieldCheck, ShoppingBag, Trash2, Truck, Wallet, X } from 'lucide-preact';
+import { ArrowRight, FileText, Info, MapPin, Minus, Plus, ShieldCheck, ShoppingBag, Trash2, Truck, Wallet, X } from 'lucide-preact';
 import { cart, panel, selectedOf, subtotalOf, useCart } from '@/lib/cart';
 import { useCartCheck } from '@/lib/cart-check';
 import { BulkNote, LineMoney, lineOf } from './BulkNote';
@@ -273,6 +273,15 @@ export default function CartView() {
             <span class="flex h-12 items-center justify-center rounded-full bg-zinc-200 px-5 text-sm font-semibold text-zinc-500">Tick the items to order</span>
           )}
         </div>
+        {/* For schools, offices and shops: the ticked items as a priced quotation (print, share, order later). */}
+        {picked.length > 0 && (
+          <a
+            href="/quotation/"
+            class="mt-2 flex h-11 items-center justify-center gap-2 rounded-xl text-sm font-semibold text-brand-800 ring-1 ring-brand-200 hover:bg-brand-50"
+          >
+            <FileText class="size-4" /> Get a quotation
+          </a>
+        )}
         {checking && <p class="sr-only">Checking prices and stock</p>}
 
         <ul class="mt-4 space-y-2 text-sm text-zinc-600">
