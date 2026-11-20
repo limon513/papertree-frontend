@@ -213,7 +213,7 @@ export default function CheckoutView({ online = false }: { online?: boolean }) {
           location.href = data.payUrl;
           return;
         }
-        location.replace(data.token ? `/checkout/thank-you/?o=${encodeURIComponent(data.token)}${data.payError ? '&payment=error' : ''}` : '/');
+        location.replace(data.token ? `/checkout/thank-you/?o=${encodeURIComponent(data.token)}&placed=1${data.payError ? '&payment=error' : ''}` : '/');
         return;
       }
       const error = data && 'error' in data ? data.error : undefined;

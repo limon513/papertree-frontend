@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import { BellOff, BellRing, Share } from 'lucide-preact';
 import { useMe } from '@/lib/account';
-import { pushState, turnOff, turnOn, type PushState } from '@/lib/push';
+import { onPushFailed, pushState, turnOff, turnOn, type PushState } from '@/lib/push';
 import type { PushConfig } from '@/lib/types';
 import { API_PUBLIC_URL, cn } from '@/lib/utils';
 
@@ -21,6 +21,15 @@ export default function NotificationSettings({ config }: { config: PushConfig | 
   const [note, setNote] = useState<string | null>(null);
 
   useEffect(() => setState(pushState()), []);
+  // Turned on, but the connection did not finish (shown as soon as it is known).
+  useEffect(
+    () =>
+      onPushFailed(() => {
+        setState(pushState());
+        setNote('Alerts could not be turned on. Please try again later.');
+      }),
+    [],
+  );
   const load = async () => {
     const res = await fetch(`${API_PUBLIC_URL}/v1/store/me/notifications`, { credentials: 'include' }).catch(() => null);
     if (res?.ok) setPrefs((await res.json()) as Prefs);
