@@ -68,6 +68,8 @@ export interface Catalog {
   onlinePayment?: boolean;
   /** Push notifications: the Firebase web settings to turn them on. null when off. */
   push?: PushConfig | null;
+  /** Search by photo is on (the camera button in the search box). */
+  photoSearch?: boolean;
   /** The shop's wholesale terms (for the Wholesale page). */
   wholesale?: { advancePercent: number; minOrderAmount: number | null; delivery: 'retail' | 'fixed' | 'free' | 'paid_on_delivery'; deliveryFee: number | null; terms: string | null };
 }
@@ -220,6 +222,8 @@ export interface Product {
   categoryPath: { name: string; slug: string }[];
   variants: ProductVariant[];
   related: ProductCard[];
+  /** Products whose pictures look like this one's, closest first. */
+  similar?: ProductCard[];
 }
 
 export interface Suggestions {

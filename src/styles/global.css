@@ -221,3 +221,22 @@ html:has(dialog[open]) {
     margin: 14mm;
   }
 }
+
+/* Search by photo: a light line sweeps over the searched part of the photo while it is looked at. */
+@keyframes photo-scan {
+  from {
+    top: 0;
+  }
+  to {
+    top: 100%;
+  }
+}
+.photo-scan {
+  animation: photo-scan 1.1s ease-in-out infinite alternate;
+}
+@media (prefers-reduced-motion: reduce) {
+  .photo-scan {
+    animation: none;
+    top: 50%;
+  }
+}

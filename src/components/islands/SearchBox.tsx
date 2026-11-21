@@ -1,22 +1,28 @@
 import { useEffect, useId, useRef, useState } from 'preact/hooks';
-import { ArrowRight, ArrowUpLeft, History, Loader2, Search, TrendingUp, X } from 'lucide-preact';
+import { ArrowRight, ArrowUpLeft, Camera, History, Loader2, Search, TrendingUp, X } from 'lucide-preact';
 import type { Suggestions } from '@/lib/types';
 import { useMe } from '@/lib/account';
 import { clearSearches, forgetSearch, popularSearches, recentSearches, rememberSearch } from '@/lib/searches';
 import { wholesalePrices, type WholesalePrice } from '@/lib/wholesale';
 import { API_PUBLIC_URL, cn, iconUrl, imageAt, links, money } from '@/lib/utils';
+import { PhotoPanel, pictureIn } from './PhotoPicker';
 
 /**
  * The big search box.
  * - Opened, before typing: the shopper's recent searches (their browser only) and popular searches.
  * - While typing: suggested searches ("pen" -> "pencil", "gel pen"), categories, brands and products.
  * Arrow keys move through all of them; Enter opens the chosen one, or searches what is typed.
+ * - The camera button (when search by photo is on): search with a photo. A picture pasted into the
+ *   box or dropped on it does the same.
  */
 type Option = { kind: 'recent' | 'popular' | 'term'; text: string } | { kind: 'product'; slug: string };
 
-export default function SearchBox({ className, initial = '', autoFocus = false }: { className?: string; initial?: string; autoFocus?: boolean }) {
+export default function SearchBox({ className, initial = '', autoFocus = false, photo = false }: { className?: string; initial?: string; autoFocus?: boolean; photo?: boolean }) {
   const [text, setText] = useState(initial);
   const [open, setOpen] = useState(false);
+  const [photoOpen, setPhotoOpen] = useState(false);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
   const [data, setData] = useState<{ q: string; result: Suggestions } | null>(null);
   const [loading, setLoading] = useState(false);
   const [active, setActive] = useState(-1);
@@ -61,11 +67,16 @@ export default function SearchBox({ className, initial = '', autoFocus = false }
   // A press inside the box (a suggestion, a ×) never closes it first: phones take the focus away
   // from the typing field before the tap lands on the suggestion.
   const pressing = useRef(false);
+  const photoBusyRef = useRef(false);
+  photoBusyRef.current = photoBusy;
   useEffect(() => {
     const onDown = (e: PointerEvent) => {
       const inside = !!box.current?.contains(e.target as Node);
       pressing.current = inside;
-      if (!inside) setOpen(false);
+      if (!inside) {
+        setOpen(false);
+        if (!photoBusyRef.current) setPhotoOpen(false);
+      }
     };
     const onUp = () => setTimeout(() => (pressing.current = false), 0);
     document.addEventListener('pointerdown', onDown);
@@ -136,11 +147,36 @@ export default function SearchBox({ className, initial = '', autoFocus = false }
     input.current?.focus();
   };
 
-  const showPanel = open && (typing ? result !== null || loading : recent.length > 0 || shownPopular.length > 0);
+  const usePicture = (file: File | null) => {
+    if (!photo || !file) return false;
+    setOpen(false);
+    setPhotoOpen(true);
+    setPhotoFile(file);
+    return true;
+  };
+
+  const showPanel = !photoOpen && open && (typing ? result !== null || loading : recent.length > 0 || shownPopular.length > 0);
   const optionId = (i: number) => `${listId}-${i}`;
 
   return (
-    <div ref={box} onFocusOut={left} class={cn('relative', className)}>
+    <div
+      ref={box}
+      onFocusOut={left}
+      // A photo dragged over the box: the photo panel opens to take it.
+      onDragEnter={(e) => {
+        if (photo && e.dataTransfer?.types.includes('Files')) {
+          setOpen(false);
+          setPhotoOpen(true);
+        }
+      }}
+      onDragOver={(e) => photo && e.preventDefault()}
+      onDrop={(e) => {
+        if (!photo) return;
+        e.preventDefault();
+        usePicture(pictureIn(e.dataTransfer));
+      }}
+      class={cn('relative', className)}
+    >
       <form
         role="search"
         onSubmit={(e) => {
@@ -158,7 +194,13 @@ export default function SearchBox({ className, initial = '', autoFocus = false }
             setOpen(true);
             setActive(-1);
           }}
-          onFocus={opened}
+          onFocus={() => {
+            if (!photoBusy) setPhotoOpen(false);
+            opened();
+          }}
+          onPaste={(e) => {
+            if (usePicture(pictureIn(e.clipboardData))) e.preventDefault();
+          }}
           onClick={() => {
             if (!open) opened();
           }}
@@ -188,8 +230,8 @@ export default function SearchBox({ className, initial = '', autoFocus = false }
           enterKeyHint="search"
           class="h-full min-w-0 flex-1 bg-transparent px-2.5 text-[15px] outline-none placeholder:text-zinc-500 [&::-webkit-search-cancel-button]:hidden"
         />
-        {/* Always the same width, so the box never jumps while typing. Enter searches. */}
-        <span class="flex size-9 shrink-0 items-center justify-center">
+        {/* Always the same width, so the box never jumps while typing (beside the camera: only when needed). Enter searches. */}
+        <span class={cn('flex size-9 shrink-0 items-center justify-center', photo && !loading && !text && 'hidden')}>
           {loading ? (
             <Loader2 class="size-4 animate-spin text-zinc-400" />
           ) : text ? (
@@ -207,7 +249,30 @@ export default function SearchBox({ className, initial = '', autoFocus = false }
             </button>
           ) : null}
         </span>
+        {photo && (
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              setPhotoOpen((o) => !o);
+            }}
+            aria-label="Search with a photo"
+            title="Search with a photo"
+            aria-expanded={photoOpen}
+            class={cn('-ml-1 flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors', photoOpen ? 'bg-brand-600 text-white' : 'text-zinc-600 hover:bg-white hover:text-brand-700')}
+          >
+            <Camera class="size-5" />
+          </button>
+        )}
       </form>
+      {photoOpen && (
+        <div class="absolute inset-x-0 top-full z-50 mt-2 animate-fade-in rounded-2xl bg-white shadow-xl ring-1 ring-zinc-200">
+          <button type="button" onClick={() => setPhotoOpen(false)} aria-label="Close" class="absolute top-3 right-3 cursor-pointer rounded-full p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700">
+            <X class="size-4" />
+          </button>
+          <PhotoPanel file={photoFile} onBusy={setPhotoBusy} />
+        </div>
+      )}
       {showPanel && (
         <div id={listId} role="listbox" aria-label="Search help" class="absolute inset-x-0 top-full z-50 mt-2 max-h-[70vh] animate-fade-in overflow-y-auto rounded-2xl bg-white shadow-xl ring-1 ring-zinc-200">
           {!typing ? (
