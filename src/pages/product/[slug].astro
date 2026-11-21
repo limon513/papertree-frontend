@@ -1,6 +1,6 @@
 ---
 import TagBadge from '@/components/TagBadge.astro';
-import { ChevronRight, ShieldCheck, Wallet } from 'lucide-preact';
+import { ChevronRight, ScanSearch, ShieldCheck, Wallet } from 'lucide-preact';
 import Layout from '@/layouts/Layout.astro';
 import ViewedCategory from '@/components/ViewedCategory.astro';
 import { WishButton } from '@/components/islands/WishButton';
@@ -33,6 +33,11 @@ const description = product.seoDescription ?? (product.shortDescription || plain
 const path = product.categoryPath;
 const crumbs = path.map((c, i) => ({ name: c.name, href: links.category(path.slice(0, i + 1).map((p) => p.slug)) }));
 const url = `${SITE_URL}${links.product(product.slug)}`;
+// Products that look like this one (search by photo). Sold out: shown high up, as the way on.
+const similar = product.similar ?? [];
+const soldOut = product.variants.every((v) => !v.inStock);
+const similarInStock = similar.filter((p) => p.inStock);
+const similarHref = `/search/photo/?like=${product.id}`;
 
 // Google: price, stock and brand in search results, one offer per option.
 const offer = (v: (typeof product.variants)[number]) => ({
@@ -126,9 +131,26 @@ Astro.response.headers.set('cache-control', 'public, max-age=0, s-maxage=60, sta
         <ul class="mt-3 space-y-2 px-1 text-sm text-zinc-600">
           <li class="flex items-center gap-2.5"><Wallet class="size-4 shrink-0 text-brand-600" /> Pay cash when it arrives, or bKash, Nagad and cards</li>
           <li class="flex items-center gap-2.5"><ShieldCheck class="size-4 shrink-0 text-brand-600" /> Original products, checked before packing</li>
+          {
+            similar.length > 0 && (
+              <li>
+                <a href={similarHref} class="inline-flex items-center gap-2.5 font-medium text-brand-700 hover:underline">
+                  <ScanSearch class="size-4 shrink-0" /> Find similar items
+                </a>
+              </li>
+            )
+          }
         </ul>
       </div>
     </div>
+
+    {
+      soldOut && similarInStock.length > 0 && (
+        <div class="-mx-4 mt-8 sm:-mx-6">
+          <ProductRail title="Sold out? These look similar" subtitle="In stock and ready to send" href={similarHref} products={similarInStock} tone="new" />
+        </div>
+      )
+    }
 
     {
       (product.description || product.specs.length > 0) && (
@@ -164,6 +186,7 @@ Astro.response.headers.set('cache-control', 'public, max-age=0, s-maxage=60, sta
     <Reviews productId={product.id} productName={product.name} slug={product.slug} reviews={reviews} />
   </div>
 
+  {!soldOut && <ProductRail title="Similar items" subtitle="They look like this one" href={similarHref} products={similar} />}
   <ProductRail title="You may also need" href={crumbs.length ? crumbs[crumbs.length - 1]!.href : undefined} products={product.related} />
   <ViewedCategory slug={path.at(-1)?.slug} />
 </Layout>

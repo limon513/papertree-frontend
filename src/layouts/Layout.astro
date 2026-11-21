@@ -109,7 +109,7 @@ const imageOrigin = store.logo ? new URL(imageAt(store.logo, 160)).origin : null
           }
         </a>
         <DeliverToButton client:idle className="hidden w-48 shrink-0 lg:flex" />
-        <SearchBox client:idle initial={query} autoFocus={focusSearch} className="hidden max-w-lg flex-1 md:block" />
+        <SearchBox client:idle initial={query} autoFocus={focusSearch} photo={catalog.photoSearch === true} className="hidden max-w-lg flex-1 md:block" />
         <div class="ml-auto flex items-center gap-2">
           {
             store.phone && (
@@ -133,7 +133,7 @@ const imageOrigin = store.logo ? new URL(imageAt(store.logo, 160)).origin : null
 
       <!-- Phones and tablets: search under the logo, then the delivery area. -->
       <div class="px-4 pb-2.5 sm:px-6 md:hidden">
-        <SearchBox client:idle initial={query} autoFocus={focusSearch} />
+        <SearchBox client:idle initial={query} autoFocus={focusSearch} photo={catalog.photoSearch === true} />
         <DeliverToButton client:idle compact className="mt-2 max-w-full" />
       </div>
 
