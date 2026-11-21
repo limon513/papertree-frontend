@@ -1,0 +1,45 @@
+---
+import { History, RotateCcw } from 'lucide-preact';
+import ProductRail from '@/components/ProductRail.astro';
+import { getCards } from '@/lib/api';
+
+/**
+ * A signed-in customer's own rows for the home page, as plain HTML: ?rows=recent:1,2,3;again:4,5
+ * (only these two kinds, product ids in order). Their browser asks the API which products, then this
+ * for the rows, so they look and work like every other row. Public product data only; not a page.
+ */
+export const partial = true;
+
+const KINDS = {
+  recent: { title: 'Pick up where you left off', subtitle: 'You looked at these lately' },
+  again: { title: 'Buy again', subtitle: 'From your orders, in stock now' },
+} as const;
+type Kind = keyof typeof KINDS;
+
+const wanted = (Astro.url.searchParams.get('rows') ?? '')
+  .split(';')
+  .map((part) => {
+    const [kind, list = ''] = part.split(':');
+    const ids = [...new Set(list.split(',').map(Number).filter((n) => Number.isInteger(n) && n > 0))].slice(0, 12);
+    return kind && kind in KINDS && ids.length ? { kind: kind as Kind, ids } : null;
+  })
+  .filter((r) => r !== null);
+const all = [...new Set(wanted.flatMap((r) => r.ids))].slice(0, 60);
+const items: Awaited<ReturnType<typeof getCards>>['items'] = all.length ? (await getCards(all)).items : [];
+const byId = new Map(items.map((p) => [p.id, p]));
+const rows = wanted.map((r) => ({ ...r, ...KINDS[r.kind], products: r.ids.flatMap((id) => byId.get(id) ?? []) })).filter((r) => r.products.length > 0);
+Astro.response.headers.set('cache-control', 'public, max-age=60, s-maxage=60, stale-while-revalidate=300');
+Astro.response.headers.set('x-robots-tag', 'noindex');
+---
+
+{
+  rows.map((r) => (
+    <div data-row={r.kind}>
+      <ProductRail title={r.title} subtitle={r.subtitle} products={r.products} priority>
+        <span slot="icon" class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white ring-1 ring-brand-200">
+          {r.kind === 'recent' ? <History class="size-5 text-brand-600" /> : <RotateCcw class="size-5 text-brand-600" />}
+        </span>
+      </ProductRail>
+    </div>
+  ))
+}

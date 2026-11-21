@@ -129,6 +129,9 @@ Astro.response.headers.set('cache-control', 'public, max-age=0, s-maxage=60, sta
     </div>
   </section>
 
+  <!-- A signed-in customer's own rows ("Pick up where you left off", "Buy again"), added by their browser (src/scripts/for-you.ts). -->
+  <div data-personal-rows></div>
+
   <!-- Each section has its own look: deals yellow, best sellers green trophy, new arrivals lime. -->
   <ProductRail title="Today’s deals" subtitle="The biggest discounts right now" href="/deals/" products={home.deals} tone="deals" priority>
     <span slot="icon" class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-marigold-300"><Flame class="size-5 text-zinc-900" /></span>

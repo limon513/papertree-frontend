@@ -14,6 +14,8 @@ import { PhotoPanel } from './PhotoPicker';
  * which sends the photo to staff with the shopper's name and phone.
  */
 const WHOLE: Box = { x: 0, y: 0, w: 1, h: 1 };
+/** Results shown at first, and added by each "Show more" (fits rows of 2, 3, 4 and 6). */
+const PAGE = 12;
 const isWhole = (b: Box) => b.w > 0.97 && b.h > 0.97;
 
 export default function PhotoResults({ likeId = null, whatsapp = null }: { likeId?: number | null; whatsapp?: string | null }) {
@@ -27,6 +29,8 @@ export default function PhotoResults({ likeId = null, whatsapp = null }: { likeI
   const [inStock, setInStock] = useState(false);
   const [newPhoto, setNewPhoto] = useState(false);
   const [cardsHtml, setCardsHtml] = useState<Map<number, Element>>(new Map());
+  const [limit, setLimit] = useState(PAGE);
+  const [loadingMore, setLoadingMore] = useState(false);
   const grid = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -42,15 +46,11 @@ export default function PhotoResults({ likeId = null, whatsapp = null }: { likeI
     setProblem(null);
     (likeId ? similarTo(likeId, controller.signal) : searchPhoto(photo!, box, controller.signal))
       .then(async (r) => {
-        // The shop's usual cards (hearts, add to cart), in our order.
-        const ids = r.items.map((i) => i.id);
-        const html = ids.length ? await (await fetch(`/fragments/cards/?ids=${ids.slice(0, 60).join(',')}`, { signal: controller.signal })).text() : '';
-        const t = document.createElement('template');
-        t.innerHTML = html;
-        t.content.querySelectorAll('script').forEach((s) => s.remove());
-        setCardsHtml(new Map([...t.content.querySelectorAll('li[data-item-of]')].map((li) => [Number((li as HTMLElement).dataset.itemOf), li])));
+        // The shop's usual cards (hearts, add to cart) for the first ones; more come with "Show more".
+        setCardsHtml(await cardsFor(r.items.slice(0, PAGE).map((i) => i.id), controller.signal));
         setResults(r);
         setCategory(null);
+        setLimit(PAGE);
       })
       .catch((err: unknown) => {
         if (controller.signal.aborted) return;
@@ -63,13 +63,27 @@ export default function PhotoResults({ likeId = null, whatsapp = null }: { likeI
   // Where the server looked closer (the item it found in the photo), until the shopper moves the box.
   const auto = !box && results?.focus ? results.focus : null;
   const shown = (results?.items ?? []).filter((i) => (!category || i.category?.slug === category) && (!inStock || i.inStock));
+  const visible = shown.slice(0, limit);
+  const missing = visible.filter((i) => !cardsHtml.has(i.id)).map((i) => i.id);
+
+  // Cards not loaded yet (after "Show more", or a chip showing others): fetched, then added.
+  useEffect(() => {
+    if (!missing.length) return;
+    const controller = new AbortController();
+    setLoadingMore(true);
+    cardsFor(missing, controller.signal)
+      .then((more) => setCardsHtml((old) => new Map([...old, ...more])))
+      .catch(() => {})
+      .finally(() => !controller.signal.aborted && setLoadingMore(false));
+    return () => controller.abort();
+  }, [missing.join(',')]);
   const best = results?.items[0];
   const found = best && best.match !== 'similar';
 
   // Put the cards in the grid, with "Same item" / "Close match" on the close ones.
   useEffect(() => {
     if (!grid.current) return;
-    const lis = shown.flatMap((item, n) => {
+    const lis = visible.flatMap((item, n) => {
       const li = cardsHtml.get(item.id);
       if (!li) return [];
       li.querySelector('[data-match]')?.remove();
@@ -84,7 +98,7 @@ export default function PhotoResults({ likeId = null, whatsapp = null }: { likeI
     });
     grid.current.replaceChildren(...lis);
     document.dispatchEvent(new Event('pt:cards'));
-  }, [cardsHtml, category, inStock, results]);
+  }, [cardsHtml, category, inStock, results, limit]);
 
   if (!ready) return <div class="h-96" />;
 
@@ -170,13 +184,13 @@ export default function PhotoResults({ likeId = null, whatsapp = null }: { likeI
             {results.categories.length > 1 && (
               <ul aria-label="Filter by category" class="scrollbar-none -mx-4 flex gap-2 overflow-x-auto px-4 py-1 sm:mx-0 sm:flex-wrap sm:px-0">
                 <li>
-                  <Chip on={!category} onClick={() => setCategory(null)}>
+                  <Chip on={!category} onClick={() => (setCategory(null), setLimit(PAGE))}>
                     All <span class="opacity-60">{results.items.length}</span>
                   </Chip>
                 </li>
                 {results.categories.map((c) => (
                   <li key={c.slug}>
-                    <Chip on={category === c.slug} onClick={() => setCategory(category === c.slug ? null : c.slug)}>
+                    <Chip on={category === c.slug} onClick={() => (setCategory(category === c.slug ? null : c.slug), setLimit(PAGE))}>
                       {c.name} <span class="opacity-60">{c.count}</span>
                     </Chip>
                   </li>
@@ -184,7 +198,7 @@ export default function PhotoResults({ likeId = null, whatsapp = null }: { likeI
               </ul>
             )}
             <label class="flex cursor-pointer items-center gap-2 rounded-full bg-white px-3 py-1.5 text-sm text-zinc-700 ring-1 ring-zinc-200">
-              <input type="checkbox" checked={inStock} onChange={(e) => setInStock(e.currentTarget.checked)} class="size-4 accent-brand-600" /> In stock only
+              <input type="checkbox" checked={inStock} onChange={(e) => (setInStock(e.currentTarget.checked), setLimit(PAGE))} class="size-4 accent-brand-600" /> In stock only
             </label>
           </div>
         )}
@@ -198,6 +212,21 @@ export default function PhotoResults({ likeId = null, whatsapp = null }: { likeI
             </ul>
           )}
           <ul ref={grid} class="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 xl:grid-cols-4" aria-label="Matching products" />
+          {results && shown.length > limit && (
+            <div class="mt-5 flex flex-col items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setLimit((l) => l + PAGE)}
+                disabled={loadingMore}
+                class="h-11 cursor-pointer rounded-xl bg-white px-6 text-sm font-semibold text-zinc-800 ring-1 ring-zinc-300 hover:bg-zinc-50 disabled:opacity-60"
+              >
+                {loadingMore ? 'Loading…' : `Show ${Math.min(PAGE, shown.length - limit)} more`}
+              </button>
+              <p class="text-xs text-zinc-500">
+                Showing {Math.min(limit, shown.length)} of {shown.length}
+              </p>
+            </div>
+          )}
           {results && shown.length === 0 && results.items.length > 0 && <p class="py-8 text-center text-sm text-zinc-500">Nothing in stock here. Untick “In stock only” to see all.</p>}
           {results && results.items.length === 0 && (
             <div class="flex flex-col items-center py-10 text-center">
@@ -212,6 +241,16 @@ export default function PhotoResults({ likeId = null, whatsapp = null }: { likeI
       </section>
     </div>
   );
+}
+
+/** The shop's usual cards for these products, by id (from /fragments/cards/). */
+async function cardsFor(ids: number[], signal: AbortSignal) {
+  if (!ids.length) return new Map<number, Element>();
+  const res = await fetch(`/fragments/cards/?ids=${ids.join(',')}`, { signal });
+  const t = document.createElement('template');
+  t.innerHTML = res.ok ? await res.text() : '';
+  t.content.querySelectorAll('script').forEach((s) => s.remove());
+  return new Map([...t.content.querySelectorAll('li[data-item-of]')].map((li) => [Number((li as HTMLElement).dataset.itemOf), li]));
 }
 
 function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: preact.ComponentChildren }) {
